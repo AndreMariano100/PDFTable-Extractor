@@ -24,18 +24,22 @@ def read_single_page(pdf_path, pdf_page, top, bottom, left, right, columns_posit
     input:
         pdf_path            - STR: PDF file path
         pdf_page            - INT: PDF page number
-        top                 - STR: '%10' table start, distance from the top (percent of the page height)
-        bottom              - STR: '%90' table finish: distance from the top (percent of the page height)
-        left                - STR: '%10' table start: distance from the left (percent of the page width)
-        right               - STR: '%90' table finish: distance from the left (percent of the page width)
-        columns_positions   - LIST: list with the columns positions starting from the left
+        top                 - INT: table start, distance from the top
+        bottom              - INT: table finish: distance from the top
+        left                - INT: table start: distance from the left
+        right               - INT: table finish: distance from the left
+        columns_positions   - LIST: list with the columns end positions starting from the left
         columns_names       - LIST: list with the columns names
 
     returns: PANDAS dataframe
     """
 
-    dfs = tabula.read_pdf(pdf_path, pages=pdf_page, guess=False, relative_area=True,
+    dfs = tabula.read_pdf(pdf_path, pages=pdf_page, guess=False,
                           area=[top, left, bottom, right], columns=columns_positions)
+    if not dfs:
+        print('Empty table error')
+        return
+
     print(dfs)
     df = dfs[0]
     print(df)
@@ -47,7 +51,7 @@ def read_single_page(pdf_path, pdf_page, top, bottom, left, right, columns_posit
     return df
 
 
-def read_table_group(pdf_path, page_start, page_finish, boundaries_dict, columns_names_dict):
+def read_group_table(pdf_path, page_start, page_finish, boundaries_dict, columns_names_dict):
     """
     Intermediary function that will concatenate the tables as per the required grouping
     input:
@@ -97,38 +101,15 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
 
     df = pd.DataFrame()
     page_grouping = pages_per_table + page_skip
+    total = page_end - page_start
 
     for current_page in range(page_start, page_end, page_grouping):
-        df_temp = read_table_group(pdf_path, current_page, pages_per_table, page_skip, boundaries_dict, columns_names)
+        group_starting_page = current_page
+        group_finish_page = current_page + pages_per_table
+        df_temp = read_group_table(pdf_path, group_starting_page, group_finish_page, boundaries_dict, columns_names)
         df = df.append(df_temp)
-        completion = 100*(current_page+(page_grouping-1)-page_start)/(page_end-page_start)
-        print(f'{completion:.2f} %')
+
+        completion = 100*(current_page / total)
+        print(f'{completion:.1f} %')
     df = df.reset_index(drop=True)
-    return df
-
-
-def read_table_group(pdf_path, current_page, pages_per_table, page_skip, boundaries_dict, columns_names):
-    """
-    Intermediary function that will concatenate the tables as per the required grouping
-    input:
-        pdf_path        - STR: PDF file path
-        page_skip       - INT: pages to skip in between the tables
-        boundaries_dict - DICT: dictionary with the table boundaries
-        columns_names   - DICT: dictionary with the columns names
-
-    returns: PANDAS dataframe
-    """
-
-    df_temp = []
-    df = pd.DataFrame()
-
-    for i in range(pages_per_table):
-        current_page_pattern_number = i+1
-        if current_page_pattern_number not in page_skip:
-            df_temp.append(Read(pdf_path,page_start+i,top[i],left[i],width[i],height[i],columns_spaces[i],columns_names[i],clear_table[i]))
-            # df_temp.append(read_pdf_page(pdf_path, pdf_page, top, bottom, left, right, columns_positions, columns_names)
-            if i>0:
-                df_temp[i].drop(df_temp[i].columns[0], axis=1, inplace=True)
-
-    df = pd.concat([df_temp[i] for i in range(pages_per_table)], axis=1)
     return df
