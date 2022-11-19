@@ -1,0 +1,56 @@
+ATENÇÃO - A COLUNA NOMINAL COMPOSITION ESTA LENDO ERRADO, NÃO CONSEGUI CORRIGIR TODAS AS EXCEÇÕES E POR ISSO DESATIVEI A ROTINA DE CORREÇÃO.
+
+
+1) O arquivo para rodar é o "Main_ASME_Table_U_Read";
+
+2) Dentro deste arquivo tem que indicar o caminho do pdf da tabela ASME D (pdf_path = "ASME_D_2021.pdf")
+
+3) Preencher (se for ler outra tabela) as variaveis abaixo com a pagina de inicio e a pagina de fim da leitura:     
+	page_start = ... (primeira página a ler)
+    	page_end = ... (ultima pagina a ler, inclusa na leitura)
+
+
+	Caso queiram ler apenas uma pagina para testar, a variavel page_end tem que ser igual à page_start+1
+
+4) No exemplo da tabela U, o padrão de páginas se repete a cada 4 páginas, sendo que a 4a página é uma página em branco (deve ser pulada).
+       Preencher lista com as páginas para pular:
+
+		page_skip = [4]  (indica que a 4a página vai ser pulada)  
+				 (Caso não seja necessário pular página, deixa esta lista vazia, como no exemplo da tabela 1A)
+
+	No caso da tabela U é preciso passar as informações de 3 páginas conforme abaixo:
+
+    # Pg1
+    top.append(140)
+    left.append(45)
+    width.append(486)
+    height.append(535)
+    columns_spaces.append([19.45, 94.2, 68, 62, 65.3, 39.5, 59.9, 50, 32.7])
+    columns_names.append(['Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                          'Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness,mm',
+                          'Min. Tensile Strength, MPa'])
+    clear_table.append(True)
+
+    # Pg2
+    top.append(145)
+    left.append(63.7)
+    width.append(493)
+    height.append(515)
+    columns_spaces.append(
+        [20.5, 27.3, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 31.92, 30])
+    columns_names.append(['Line No.', 40, 100, 150, 200, 250, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525])
+    clear_table.append(True)
+
+    # pg3
+    top.append(145)
+    left.append(46)
+    width.append(495)
+    height.append(515)
+    columns_spaces.append(
+        [19.5, 25.8, 32.16, 32.16, 32.16, 32.16, 32.16, 32.16, 32.16, 32.16, 32.16, 32.16, 32.16, 32.16,
+         32.16, 30])
+    columns_names.append(['Line No.', 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900])
+    clear_table.append(True)
+
+
+	No caso da tabela 1A o padrão se repete a cada 4 páginas e não precisa pular pagina (page_skip = []), então precisa passar as informações das 4 páginas.
