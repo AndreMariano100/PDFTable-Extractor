@@ -35,16 +35,15 @@ def read_single_page(pdf_path, pdf_page, top, bottom, left, right, columns_posit
 
     returns: PANDAS dataframe
     """
-
+    
+    print(f'Extracting page {pdf_page}')
     dfs = tabula.read_pdf(pdf_path, pages=pdf_page, guess=False, encoding='utf-8',
                           area=[top, left, bottom, right], columns=columns_positions)
     if not dfs:
         print('Empty table error')
         return
 
-    # print(dfs)
     df = dfs[0]
-    # print(df)
     df = clear_table(df)
     df = df.dropna()
     df = df.reset_index(drop=True)
@@ -53,7 +52,7 @@ def read_single_page(pdf_path, pdf_page, top, bottom, left, right, columns_posit
     return df
 
 
-def read_group_table(pdf_path, page_start, page_finish, boundaries_dict, columns_names_dict):
+def read_table_group(pdf_path, page_start, page_finish, boundaries_dict, columns_names_dict):
     """
     Intermediary function that will concatenate the tables as per the required grouping
     input:
@@ -66,29 +65,33 @@ def read_group_table(pdf_path, page_start, page_finish, boundaries_dict, columns
     returns: PANDAS dataframe
     """
 
-    # print(f'Reading group of pages: {page_start} to {page_finish}')
-    df_temp = []
+    df_temp = pd.DataFrame()
     count = 1
 
     for i in range(page_start, page_finish+1):
-        # print(f'\tReading page {i}')
         boundaries = boundaries_dict[str(count)]
-        # print(f'\tApplicable boundaries:{boundaries}')
         columns_names = columns_names_dict[str(count)]
-        # print(f'\tAplicable columns names: {columns_names}')
         top = boundaries['Top Border']
         left = boundaries['Left Border']
         right = boundaries['Right Border']
         bottom = boundaries['Bottom Border']
-        # print(f'\tMain borders: {top}, {left}, {bottom}, {right}')
         internal_borders = [v for k, v in boundaries.items() if 'End' in k and int(v) != 0]
+        new_data = read_single_page(pdf_path, i, top, bottom, left, right, internal_borders, columns_names)
+        
+        # print(f'\tReading page {i}')
+        # print(f'\tApplicable boundaries:{boundaries}')
+        # print(f'\tApplicable columns names: {columns_names}')
+        # print(f'\tMain borders: {top}, {left}, {bottom}, {right}')
         # internal_borders.insert(0, left)
         # print(f'\tAll columns borders: {internal_borders}')
-        df_temp.append(read_single_page(pdf_path, i, top, bottom, left, right, internal_borders, columns_names))
+        
+        if df_temp.empty:
+            df_temp = new_data
+        else:
+            df_temp = pd.concat([df_temp, new_data], axis=1, join='inner')
         count += 1
 
-    df = pd.concat(df_temp, axis=1)
-    return df
+    return df_temp
 
 
 def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, boundaries_dict, columns_names):
@@ -105,13 +108,13 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
 
     returns: PANDAS dataframe
     """
-    print(f'Read PDF Table method called')
-    print(f'Input Data:')
-    print(f'\tPDF file path: {pdf_path}')
-    print(f'\tPDF page start: {page_start}')
-    print(f'\tPDF page end: {page_end}')
-    print(f'\tPDF pages per table: {pages_per_table}')
-    print(f'\tPDF page to skip: {page_skip}')
+    # print(f'Read PDF Table method called')
+    # print(f'Input Data:')
+    # print(f'\tPDF file path: {pdf_path}')
+    # print(f'\tPDF page start: {page_start}')
+    # print(f'\tPDF page end: {page_end}')
+    # print(f'\tPDF pages per table: {pages_per_table}')
+    # print(f'\tPDF page to skip: {page_skip}')
     # print(f'\tBoundaries values: {boundaries_dict}')
     # print(f'\tColumns names: {columns_names}\n')
 
@@ -119,12 +122,13 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
     page_grouping = pages_per_table + page_skip
 
     for current_page in range(page_start, page_end, page_grouping):
-        print(f'Current page: {current_page}')
-
         group_starting_page = current_page
         group_finish_page = current_page + pages_per_table - 1
-        df_temp = read_group_table(pdf_path, group_starting_page, group_finish_page, boundaries_dict, columns_names)
-        df = df.append(df_temp)
-
+        df_temp = read_table_group(pdf_path, group_starting_page, group_finish_page, boundaries_dict, columns_names)
+        if df.empty:
+            df = df_temp
+        else:
+            df = pd.concat([df, df_temp])
     df = df.reset_index(drop=True)
+    # print('Extraction finished')
     return df

@@ -218,7 +218,7 @@ class ASMEPdfExtract(tk.Tk):
             self.header_dict = {}                   # dictionary for the table headers
             self.border_labels_list = \
                 ['Type 1 Border']                   # list of the border labels including skip pages
-            pandas.set_option("display.max_rows", None, "display.max_columns", None)
+            self.extracted_tables = pandas.DataFrame()  # dataframe that will hold the extracted tables
 
     # PDF File Selection -----------------------------------------------------------------------------------------------
     def select_pdf_file(self):
@@ -810,7 +810,7 @@ class ASMEPdfExtract(tk.Tk):
         self.read_border_values()
         self.draw_borders()
 
-    # Extract table methods --------------------------------------------------------------------------------------------
+    # Table data methods -----------------------------------------------------------------------------------------------
     def save_table_data(self):
         """ Saves the table data to an external file """
 
@@ -878,6 +878,7 @@ class ASMEPdfExtract(tk.Tk):
         self.pdf_page_selected()
         self.fill_values()
 
+    # Extraction methods -----------------------------------------------------------------------------------------------
     def get_header_data(self):
         """ Gets the header values from USER """
 
@@ -936,28 +937,36 @@ class ASMEPdfExtract(tk.Tk):
         # Header data from user
         self.get_header_data()
 
-        # Extracts table
+        # Starts the extraction thread
+        self.perform_extraction()
+
+        # Saves the extracted data
+        self.save_csv_table()
+
+    def perform_extraction(self):
+        """ Extracts table and saves to self.extracted_tables """
+
         _start = int(self.start_page.get())
         _end = int(self.end_page.get())
         _step = self.number_of_models
         _skip = int(self.pages_to_skip.get())
-        df = read_pdf_table(self.pdf_file_name, _start, _end, _step, _skip,
-                            self.border_values_dict, self.header_dict)
 
-        if True:
-            desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
-            filename = asksaveasfilename(initialdir=desktop, title="Select file name",
-                                         filetypes=(("CSV files", "*.csv"), ("All files", "*.*")))
-            if not filename:
-                return
+        self.extracted_tables = read_pdf_table(self.pdf_file_name, _start, _end, _step, _skip,
+                                               self.border_values_dict, self.header_dict)
 
-            if filename.find('.csv') == -1:
-                filename = filename + '.csv'
+    def save_csv_table(self):
+        """ Saves the extracted data to a csv file """
 
-            df.to_csv(filename, sep=';', encoding='utf-8-sig')
-            #
-            # pandas.set_option("display.max_rows", None, "display.max_columns", None)
-            # print(df)
+        desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
+        filename = asksaveasfilename(initialdir=desktop, title="Select file name",
+                                     filetypes=(("CSV files", "*.csv"), ("All files", "*.*")))
+        if not filename:
+            return
+
+        if filename.find('.csv') == -1:
+            filename = filename + '.csv'
+
+        self.extracted_tables.to_csv(filename, sep=';', encoding='utf-8-sig')
 
     # Root methods -----------------------------------------------------------------------------------------------------
     @staticmethod
