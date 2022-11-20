@@ -245,6 +245,7 @@ class ASMEPdfExtract(tk.Tk):
         self.pdf_file_images.clear()
         self.number_of_models = 1
         self.border_values_dict.clear()
+        self.clear_borders()
 
         open_pdf = fitz.open(self.pdf_file_name)
         total = len(open_pdf)
@@ -305,6 +306,8 @@ class ASMEPdfExtract(tk.Tk):
 
         # Buttons frame
         self.buttons_frame.grid()
+
+        self.bind('<Configure>', self.draw_borders)
 
     # PDF pages navigation ---------------------------------------------------------------------------------------------
     def spin_box_selected(self):
@@ -514,13 +517,12 @@ class ASMEPdfExtract(tk.Tk):
             if not self.number_of_models or not self.pdf_file_images:
                 return
 
-            current_page = self.pdf_page_var.get()
-            if not current_page:
-                return
-            current_page = int(current_page)
+        current_page = int(self.pdf_page_var.get())
+        start_page = int(self.start_page.get())
+        relative_index = current_page - start_page
 
         # Select the border model
-        index = current_page % len(self.border_labels_list) - 1
+        index = relative_index % len(self.border_labels_list)
         self.border_name.config(text=self.border_labels_list[index])
         self.fill_values()
 
@@ -659,7 +661,7 @@ class ASMEPdfExtract(tk.Tk):
         self.draw_borders()
 
     # Drawing methods --------------------------------------------------------------------------------------------------
-    def draw_borders(self):
+    def draw_borders(self, event=None):
         """ Draws the borders on the image """
 
         if not self.number_of_models or not self.pdf_file_images:
@@ -719,7 +721,8 @@ class ASMEPdfExtract(tk.Tk):
 
         # Draws the columns
         if True:
-            internal_borders = {k: v for k, v in data.items() if 'End' in k and int(v) != 0}
+            internal_borders = {k.replace('Column', 'C'): v for k, v in data.items() if 'End' in k and int(v) != 0}
+
             count = 1
             for k, v in internal_borders.items():
                 x_pos = float(v)
@@ -822,8 +825,14 @@ class ASMEPdfExtract(tk.Tk):
             if filename.find('.coords') == -1:
                 filename = filename + '.coords'
 
+        # Saves the data
+        if True:
+            local_dict = {
+                'Pages per Table': self.pages_per_table.get(),
+                'Pages to Skip': self.pages_to_skip.get(),
+            }
             with open(filename, mode='w') as file_object:
-                json.dump((self.border_values_dict, self.header_dict), file_object)
+                json.dump((self.border_values_dict, self.header_dict, local_dict), file_object)
 
     def load_table_data(self):
         """ Loads a previously saved table data """
@@ -844,10 +853,15 @@ class ASMEPdfExtract(tk.Tk):
             self.header_dict.clear()
 
             with open(file_name, mode='r') as file_object:
-                temp_dict_1, temp_dict_2 = json.load(file_object)
+                temp_dict_1, temp_dict_2, temp_dict_3 = json.load(file_object)
 
             self.border_values_dict.update(temp_dict_1)
             self.header_dict.update(temp_dict_2)
+
+            self.pages_per_table.set(temp_dict_3['Pages per Table'])
+            self.pages_to_skip.set(temp_dict_3['Pages to Skip'])
+            self.pages_per_table_selected()
+
             self.number_of_models = len(self.border_values_dict)
             self.pages_per_table.set(self.number_of_models)
 
@@ -867,7 +881,13 @@ class ASMEPdfExtract(tk.Tk):
     def get_header_data(self):
         """ Gets the header values from USER """
 
-        for i in range(self.number_of_models):
+        start_page = int(self.start_page.get())
+
+        for i, value in enumerate(self.border_labels_list):
+
+            if value == 'SKIP':
+                continue
+
             if str(i+1) not in self.header_dict:
                 current_list = []
                 self.header_dict[str(i+1)] = current_list
@@ -875,7 +895,7 @@ class ASMEPdfExtract(tk.Tk):
                 current_list = '//'.join(self.header_dict[str(i+1)])
 
             # Puts the PDF on the right page
-            self.pdf_page_var.set(i+1)
+            self.pdf_page_var.set(start_page+i)
             self.pdf_page_selected()
 
             # Shows the Top Level window
@@ -920,7 +940,7 @@ class ASMEPdfExtract(tk.Tk):
         _start = int(self.start_page.get())
         _end = int(self.end_page.get())
         _step = self.number_of_models
-        _skip = 0
+        _skip = int(self.pages_to_skip.get())
         df = read_pdf_table(self.pdf_file_name, _start, _end, _step, _skip,
                             self.border_values_dict, self.header_dict)
 
@@ -934,10 +954,10 @@ class ASMEPdfExtract(tk.Tk):
             if filename.find('.csv') == -1:
                 filename = filename + '.csv'
 
-            df.to_csv(filename, sep=';')
-
-            pandas.set_option("display.max_rows", None, "display.max_columns", None)
-            print(df)
+            df.to_csv(filename, sep=';', encoding='utf-8-sig')
+            #
+            # pandas.set_option("display.max_rows", None, "display.max_columns", None)
+            # print(df)
 
     # Root methods -----------------------------------------------------------------------------------------------------
     @staticmethod
