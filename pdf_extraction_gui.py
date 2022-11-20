@@ -173,14 +173,14 @@ class ASMEPdfExtract(tk.Tk):
                 for i, text in enumerate(labels):
                     widget = cw.LabelSpinbox(self.borders_data_frame, label_text=f'{text}:', spin_start=0,
                                              spin_end=10, spin_increment=1, entry_method=self.read_border_values,
-                                             entry_width=4, spin_precision=0)
+                                             entry_width=4, spin_precision=0, entry_type='int')
                     widget.grid(row=i // 2, column=i % 2, sticky='nsew', pady=2)
                     widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
                     self.borders_widgets.append(widget)
 
                 widget = cw.LabelSpinbox(self.borders_data_frame, label_text=f'Number of Columns:', spin_start=1,
                                          spin_end=20, spin_increment=1, entry_method=self.read_border_values,
-                                         entry_width=4, spin_precision=0)
+                                         entry_width=4, spin_precision=0, entry_type='int')
                 widget.grid(row=2, column=0, columnspan=2,  sticky='nsew', pady=2)
                 widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
                 self.borders_widgets.append(widget)
@@ -190,7 +190,7 @@ class ASMEPdfExtract(tk.Tk):
                 for i in range(20):
                     widget = cw.LabelSpinbox(self.borders_data_frame, label_text=f'Column {i+1} End:', spin_start=0,
                                              spin_end=10, spin_increment=1, entry_method=self.read_border_values,
-                                             entry_width=4, spin_precision=0)
+                                             entry_width=4, spin_precision=0, entry_type='int')
                     widget.grid(row=i // 2 + 3, column=i % 2, sticky='nsew', pady=1)
                     widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
                     self.borders_widgets.append(widget)
@@ -446,7 +446,9 @@ class ASMEPdfExtract(tk.Tk):
             if str(i+1) not in self.border_values_dict:
                 self.border_values_dict[str(i+1)] = {}
                 for widget in self.borders_widgets:
-                    self.border_values_dict[str(i+1)][widget.label.cget('text').replace(':', '')] = widget.get()
+                    value = widget.get()
+                    value = int(value) if value else 0
+                    self.border_values_dict[str(i+1)][widget.label.cget('text').replace(':', '')] = value
 
         # Removes items that no longer exist in the border dictionary
         all_borders_list = [k for k in self.border_values_dict.keys() if int(k) <= self.number_of_models]
@@ -629,7 +631,7 @@ class ASMEPdfExtract(tk.Tk):
 
         # Reads the columns data and protects against nonsense
         if True:
-            borders = [item.get() for item in self.borders_widgets if item.winfo_ismapped()]
+            borders = [int(item.get()) for item in self.borders_widgets if item.winfo_ismapped()]
             columns_borders = borders[5:]
             columns_borders.insert(0, int(left_border))
 
@@ -639,7 +641,7 @@ class ASMEPdfExtract(tk.Tk):
                 if value < columns_borders[i-1]:
                     columns_borders[i] = columns_borders[i-1] + 5
 
-                if value > right_border:
+                if value > int(right_border):
                     columns_borders[i] = right_border
 
             columns_borders_2 = columns_borders[1:]
@@ -668,7 +670,9 @@ class ASMEPdfExtract(tk.Tk):
         # Reads all values
         temp_dict = {}
         for i in range(5, len(self.borders_widgets)):
-            temp_dict[self.borders_widgets[i].label.cget('text').replace(':', '')] = self.borders_widgets[i].get()
+            value = self.borders_widgets[i].get()
+            value = int(value) if value else 0
+            temp_dict[self.borders_widgets[i].label.cget('text').replace(':', '')] = value
         self.border_values_dict[current_border].update(temp_dict)
 
         self.draw_borders()
