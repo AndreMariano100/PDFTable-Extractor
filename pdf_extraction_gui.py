@@ -61,6 +61,9 @@ class ASMEPdfExtract(tk.Tk):
             widget = ttk.Button(local_frame, text='Select PDF file', command=self.select_pdf_file)
             widget.grid(row=0, column=0, columnspan=2, sticky='nsew')
 
+            widget = ttk.Label(local_frame, text='View PDF Page:', anchor='e')
+            widget.grid(row=1, column=0, sticky='nsew', pady=(5, 0))
+
             self.pdf_page_var = tk.IntVar(value=0)
             self.pdf_page_widget = ttk.Spinbox(local_frame, from_=1, to=0, increment=1, width=6, state='disabled',
                                                command=self.spin_box_selected, textvariable=self.pdf_page_var,
@@ -68,9 +71,6 @@ class ASMEPdfExtract(tk.Tk):
             self.pdf_page_widget.grid(row=1, column=1, sticky='nsew', pady=(5, 0), padx=(5, 0))
             self.pdf_page_widget.bind('<Return>', self.pdf_page_selected)
             self.pdf_page_widget.bind('<FocusOut>', self.pdf_page_selected)
-
-            widget = ttk.Label(local_frame, text='Select PDF Page:', anchor='e')
-            widget.grid(row=1, column=0, sticky='nsew', pady=(5, 0))
 
             self.pdf_page_label = ttk.Label(local_frame, text='', anchor='e', style='secondary.TLabel')
             self.pdf_page_label.grid(row=2, column=0, columnspan=2, sticky='nsew', pady=(5, 0))
@@ -121,17 +121,33 @@ class ASMEPdfExtract(tk.Tk):
                                                    style='secondary.TLabel')
             self.pages_per_table_label.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=(5, 0))
 
-        # Left frame - table configuration
+        # Left frame - borders configuration
         if True:
             self.border_configuration_frame = ttk.LabelFrame(left_frame, text='Borders Configuration', padding=10)
             self.border_configuration_frame.grid(row=3, column=0, sticky='nsew', pady=(5, 0))
             self.border_configuration_frame.columnconfigure(0, weight=1)
             self.border_configuration_frame.grid_remove()
 
-            # Navigation buttons
+            # Buttons
             if True:
                 local_frame = ttk.Frame(self.border_configuration_frame)
                 local_frame.grid(row=0, column=0, sticky='nsew', pady=(0, 5))
+                local_frame.rowconfigure(0, weight=1)
+                local_frame.columnconfigure(0, weight=1)
+                local_frame.columnconfigure(1, weight=1)
+                local_frame.columnconfigure(2, weight=1)
+
+                button = ttk.Button(local_frame, text='Load Borders Data', command=self.load_table_data)
+                button.grid(row=0, column=0, sticky='nsew')
+                button = ttk.Button(local_frame, text='Clear Borders Data', command=self.clear_table_data)
+                button.grid(row=0, column=1, sticky='nsew', padx=(2, 0))
+                button = ttk.Button(local_frame, text='Save Borders Data', command=self.save_table_data)
+                button.grid(row=0, column=2, sticky='nsew', padx=(2, 0))
+
+            # Navigation buttons
+            if True:
+                local_frame = ttk.Frame(self.border_configuration_frame)
+                local_frame.grid(row=1, column=0, sticky='nsew', pady=(0, 5))
                 local_frame.columnconfigure(1, weight=1)
                 local_frame.rowconfigure(0, weight=1)
 
@@ -148,7 +164,7 @@ class ASMEPdfExtract(tk.Tk):
             # External borders data
             if True:
                 self.borders_data_frame = ttk.Frame(self.border_configuration_frame)
-                self.borders_data_frame.grid(row=1, column=0, sticky='nsew')
+                self.borders_data_frame.grid(row=2, column=0, sticky='nsew')
                 self.borders_data_frame.columnconfigure(0, weight=1)
                 self.borders_data_frame.columnconfigure(1, weight=1)
 
@@ -185,18 +201,15 @@ class ASMEPdfExtract(tk.Tk):
             self.buttons_frame = ttk.Frame(left_frame)
             self.buttons_frame.grid(row=4, column=0, sticky='nsew', pady=(5, 0))
             self.buttons_frame.rowconfigure(0, weight=1)
-            for i in range(4):
-                self.buttons_frame.columnconfigure(i, weight=1)
+            self.buttons_frame.columnconfigure(0, weight=1)
+            self.buttons_frame.columnconfigure(1, weight=1)
             self.buttons_frame.grid_remove()
 
-            button = ttk.Button(self.buttons_frame, text='Load Table Data', command=self.load_table_data)
-            button.grid(row=0, column=0, sticky='nsew', pady=(5, 0))
-            button = ttk.Button(self.buttons_frame, text='Clear Table Data', command=self.clear_table_data)
-            button.grid(row=0, column=1, sticky='nsew', pady=(5, 0), padx=(2, 0))
-            button = ttk.Button(self.buttons_frame, text='Save Table Data', command=self.save_table_data)
-            button.grid(row=0, column=2, sticky='nsew', pady=(5, 0), padx=(2, 0))
-            button = ttk.Button(self.buttons_frame, text='Extract Table', command=self.extract_table)
-            button.grid(row=0, column=3, sticky='nsew', pady=(5, 0), padx=(2, 0))
+            button = ttk.Button(self.buttons_frame, text='Set Columns Names', command=self.set_columns_names)
+            button.grid(row=0, column=0, sticky='nsew')
+            button = ttk.Button(self.buttons_frame, text='Extract Table', command=self.extract_table,
+                                style='success.TButton')
+            button.grid(row=0, column=1, sticky='nsew', padx=(2, 0))
 
         # Right frame - canvas to show the pdf pages
         if True:
@@ -276,7 +289,7 @@ class ASMEPdfExtract(tk.Tk):
         self.pdf_page_widget.configure(state='enable', from_=1, to=total)
         self.pdf_page_var.set(1)
         self.pdf_page_selected()
-        text = f'File Name: {os.path.split(self.pdf_file_name)[1]} ({total} pages)'
+        text = f'File Name: "{os.path.split(self.pdf_file_name)[1]}" ({total} pages)'
         self.pdf_page_label.config(text=text)
 
         # Adjust the page range selection widgets
@@ -660,6 +673,76 @@ class ASMEPdfExtract(tk.Tk):
 
         self.draw_borders()
 
+    def set_columns_names(self):
+        """ Opens a TopLevel widget to collect the columns names """
+
+        start_page = int(self.start_page.get())
+
+        for i, value in enumerate(self.border_labels_list):
+
+            if value == 'SKIP':
+                continue
+
+            # Creates the item at the dictionary
+            if str(i + 1) not in self.header_dict:
+                self.header_dict[str(i + 1)] = []
+                current_values = []
+
+            else:
+                current_values = self.header_dict[str(i + 1)]
+
+            # Puts the PDF on the right page
+            self.pdf_page_var.set(start_page + i)
+            self.pdf_page_selected()
+
+            # Shows the Top Level window
+            local_top = tk.Toplevel()
+            local_top.minsize(600, 150)
+            local_top.iconbitmap(os.path.join(self.path, 'petrobras.ico'))
+            local_top.title('ASME PDF Extract Tool')
+            local_top.columnconfigure(0, weight=1)
+            local_top.configure(padx=10, pady=10)
+
+            # Message
+            message = f'Enter header from border model {i + 1}'
+            label = ttk.Label(local_top, text=message)
+            label.grid(row=0, column=0, columnspan=5, sticky='nsew', pady=(0, 10))
+
+            # Entries
+            number_of_columns = self.border_values_dict[str(i+1)]['Number of Columns']
+            all_vars = []
+            column = 0
+            row = 1
+            for j in range(int(number_of_columns)):
+                if column == 4:
+                    column = 0
+                    row += 1
+                try:
+                    value = current_values[j]
+                except IndexError:
+                    value = ''
+                var = tk.StringVar(value=value)
+                entry = ttk.Entry(local_top, textvariable=var, width=30)
+                entry.grid(row=row, column=column, sticky='nsew', padx=(2, 0), pady=(2, 0))
+                all_vars.append(var)
+                column += 1
+
+            # Buttons
+            if i < self.number_of_models - 1:
+                text = 'NEXT'
+            else:
+                text = 'FINISH'
+            button = ttk.Button(local_top, text=text, command=lambda: local_top.destroy(), width=20)
+            button.grid(row=row+1, column=3, sticky='nsew')
+
+            local_top.lift()
+            local_top.grab_set()
+            local_top.wait_window()
+
+            local_list = [var.get() for var in all_vars]
+
+            self.header_dict[str(i + 1)] = local_list
+
     # Drawing methods --------------------------------------------------------------------------------------------------
     def draw_borders(self, event=None):
         """ Draws the borders on the image """
@@ -879,63 +962,11 @@ class ASMEPdfExtract(tk.Tk):
         self.fill_values()
 
     # Extraction methods -----------------------------------------------------------------------------------------------
-    def get_header_data(self):
-        """ Gets the header values from USER """
-
-        start_page = int(self.start_page.get())
-
-        for i, value in enumerate(self.border_labels_list):
-
-            if value == 'SKIP':
-                continue
-
-            if str(i+1) not in self.header_dict:
-                current_list = []
-                self.header_dict[str(i+1)] = current_list
-            else:
-                current_list = '//'.join(self.header_dict[str(i+1)])
-
-            # Puts the PDF on the right page
-            self.pdf_page_var.set(start_page+i)
-            self.pdf_page_selected()
-
-            # Shows the Top Level window
-            local_top = tk.Toplevel()
-            local_top.minsize(600, 150)
-            local_top.iconbitmap(os.path.join(self.path, 'petrobras.ico'))
-            local_top.title('ASME PDF Extract Tool')
-            local_top.columnconfigure(0, weight=1)
-            local_top.rowconfigure(1, weight=1)
-
-            # Message
-            message = f'Enter header from border model {i+1} (separate with double forward slash - // )'
-            label = ttk.Label(local_top, text=message)
-            label.grid(row=0, column=0, columnspan=2, sticky='nsew', padx=10, pady=10)
-
-            var = tk.StringVar(value=current_list)
-            text = ttk.Entry(local_top, textvariable=var)
-            text.grid(row=1, column=0, columnspan=2, sticky='nsew', padx=10)
-
-            button = ttk.Button(local_top, text='OK', command=lambda: local_top.destroy(), width=20)
-            button.grid(row=2, column=1, sticky='nsew', padx=10, pady=10)
-
-            local_top.lift()
-            local_top.grab_set()
-            local_top.wait_window()
-
-            local_string = var.get()
-            current_list = local_string.split('//')
-
-            self.header_dict[str(i+1)] = current_list
-
     def extract_table(self):
         """ Method to extract the tables values """
 
         if not self.pdf_file_images:
             return
-
-        # Header data from user
-        self.get_header_data()
 
         # Starts the extraction thread
         self.perform_extraction()
