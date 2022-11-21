@@ -176,6 +176,7 @@ class ASMEPdfExtract(tk.Tk):
                                              entry_width=4, spin_precision=0, entry_type='int')
                     widget.grid(row=i // 2, column=i % 2, sticky='nsew', pady=2)
                     widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
+                    widget.spin.unbind('<MouseWheel>')
                     self.borders_widgets.append(widget)
 
                 widget = cw.LabelSpinbox(self.borders_data_frame, label_text=f'Number of Columns:', spin_start=1,
@@ -183,6 +184,7 @@ class ASMEPdfExtract(tk.Tk):
                                          entry_width=4, spin_precision=0, entry_type='int')
                 widget.grid(row=2, column=0, columnspan=2,  sticky='nsew', pady=2)
                 widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
+                widget.spin.unbind('<MouseWheel>')
                 self.borders_widgets.append(widget)
 
             # Internal borders data
@@ -193,6 +195,7 @@ class ASMEPdfExtract(tk.Tk):
                                              entry_width=4, spin_precision=0, entry_type='int')
                     widget.grid(row=i // 2 + 3, column=i % 2, sticky='nsew', pady=1)
                     widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
+                    widget.spin.unbind('<MouseWheel>')
                     self.borders_widgets.append(widget)
                     widget.grid_remove()
 
@@ -289,7 +292,11 @@ class ASMEPdfExtract(tk.Tk):
         self.pdf_page_widget.configure(state='enable', from_=1, to=total)
         self.pdf_page_var.set(1)
         self.pdf_page_selected()
-        text = f'File Name: "{os.path.split(self.pdf_file_name)[1]}" ({total} pages)'
+        if len(self.pdf_file_name) > 20:
+            text = f'({total} pages)'
+        else:
+            text = f'File Name: "{os.path.split(self.pdf_file_name)[1]}" ({total} pages)'
+
         self.pdf_page_label.config(text=text)
 
         # Adjust the page range selection widgets
@@ -714,7 +721,7 @@ class ASMEPdfExtract(tk.Tk):
 
             # Entries
             number_of_columns = self.border_values_dict[str(i+1)]['Number of Columns']
-            all_vars = []
+            all_columns_vars = []
             column = 0
             row = 1
             for j in range(int(number_of_columns)):
@@ -728,7 +735,7 @@ class ASMEPdfExtract(tk.Tk):
                 var = tk.StringVar(value=value)
                 entry = ttk.Entry(local_top, textvariable=var, width=30)
                 entry.grid(row=row, column=column, sticky='nsew', padx=(2, 0), pady=(2, 0))
-                all_vars.append(var)
+                all_columns_vars.append(var)
                 column += 1
 
             # Buttons
@@ -743,7 +750,7 @@ class ASMEPdfExtract(tk.Tk):
             local_top.grab_set()
             local_top.wait_window()
 
-            local_list = [var.get() for var in all_vars]
+            local_list = [var.get() for var in all_columns_vars]
 
             self.header_dict[str(i + 1)] = local_list
 
@@ -942,12 +949,12 @@ class ASMEPdfExtract(tk.Tk):
             with open(file_name, mode='r') as file_object:
                 temp_dict_1, temp_dict_2, temp_dict_3 = json.load(file_object)
 
-            self.border_values_dict.update(temp_dict_1)
-            self.header_dict.update(temp_dict_2)
-
             self.pages_per_table.set(temp_dict_3['Pages per Table'])
             self.pages_to_skip.set(temp_dict_3['Pages to Skip'])
             self.pages_per_table_selected()
+
+            self.border_values_dict.update(temp_dict_1)
+            self.header_dict.update(temp_dict_2)
 
             self.number_of_models = len(self.border_values_dict)
             self.pages_per_table.set(self.number_of_models)
