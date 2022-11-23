@@ -137,11 +137,14 @@ class ASMEPdfExtract(tk.Tk):
                 local_frame.columnconfigure(1, weight=1)
                 local_frame.columnconfigure(2, weight=1)
 
-                button = ttk.Button(local_frame, text='Load Borders Data', command=self.load_table_data)
+                button = ttk.Button(local_frame, text='Load Borders Data', command=self.load_table_data,
+                                    style='info.TButton')
                 button.grid(row=0, column=0, sticky='nsew')
-                button = ttk.Button(local_frame, text='Clear Borders Data', command=self.clear_table_data)
+                button = ttk.Button(local_frame, text='Clear Borders Data', command=self.clear_table_data,
+                                    style='danger.TButton')
                 button.grid(row=0, column=1, sticky='nsew', padx=(2, 0))
-                button = ttk.Button(local_frame, text='Save Borders Data', command=self.save_table_data)
+                button = ttk.Button(local_frame, text='Save Borders Data', command=self.save_table_data,
+                                    style='success.TButton')
                 button.grid(row=0, column=2, sticky='nsew', padx=(2, 0))
 
             # Navigation buttons
@@ -414,6 +417,11 @@ class ASMEPdfExtract(tk.Tk):
             if not (start_page <= int(end_page) <= total):
                 end_page = total
                 self.end_page.set(end_page)
+
+        # Corrects the current page being shown
+        current_page = self.pdf_page_var.get()
+        if not start_page <= current_page <= end_page:
+            self.pdf_page_var.set(start_page)
 
         self.page_range_label.configure(text=f'({end_page-start_page + 1} page range selected)')
         self.pages_per_table_selected()
@@ -744,7 +752,7 @@ class ASMEPdfExtract(tk.Tk):
             else:
                 text = 'FINISH'
             button = ttk.Button(local_top, text=text, command=lambda: local_top.destroy(), width=20)
-            button.grid(row=row+1, column=3, sticky='nsew')
+            button.grid(row=row+1, column=3, sticky='nsew', pady=10)
 
             local_top.lift()
             local_top.grab_set()
@@ -820,12 +828,8 @@ class ASMEPdfExtract(tk.Tk):
             count = 1
             for k, v in internal_borders.items():
                 x_pos = float(v)
-                location = (x_pos, 0, x_pos, canvas_size[1])
-                location_2 = (x_pos - 5, 5)
-                self.pdf_canvas.create_line(*location, fill='orange', width=2,
+                self.pdf_canvas.create_line(x_pos, 0, x_pos, canvas_size[1], fill='orange', width=2,
                                             tag=[f'column line {count}', 'draggable'])
-                self.pdf_canvas.create_text(*location_2, text=k, anchor='ne',
-                                            fill='orange', tag='column text')
                 count += 1
 
     def check_draggable(self, event):
@@ -994,7 +998,7 @@ class ASMEPdfExtract(tk.Tk):
         _skip = int(self.pages_to_skip.get())
 
         self.extracted_tables = read_pdf_table(self.pdf_file_name, _start, _end, _step, _skip,
-                                               self.border_values_dict, self.header_dict)
+                                               self.border_values_dict, self.header_dict, self)
 
     def save_csv_table(self):
         """ Saves the extracted data to a csv file """
