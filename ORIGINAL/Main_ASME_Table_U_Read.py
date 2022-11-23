@@ -74,120 +74,120 @@ import Assembly_Table
 #     return df
 #
 #
-# def corrigir_composicao_nominal_rfind(df):
-#     if "Nominal Composition" in df.columns:
-#         for i in range(len(df['Nominal Composition'])):
-#             j = df.columns.get_loc('Nominal Composition')
-#             if ' /' in df['Nominal Composition'].iloc[i]:
-#                 first_position_in_string = df['Nominal Composition'].iloc[i][0]
-#                 if first_position_in_string == '–':
-#                     second_position_in_string = df['Nominal Composition'].iloc[i][1]
-#                     space_position = df['Nominal Composition'].iloc[i].rfind(' /')
-#                     my_new_string = df['Nominal Composition'].iloc[i][2:space_position] + \
-#                                     first_position_in_string + \
-#                                     second_position_in_string + \
-#                                     df['Nominal Composition'].iloc[i][space_position + 1:]
-#
-#                 elif first_position_in_string.isnumeric():
-#                     second_position_in_string = df['Nominal Composition'].iloc[i][1]
-#
-#                     if second_position_in_string.isnumeric():
-#                         space_position = df['Nominal Composition'].iloc[i].rfind(' /')
-#                         my_new_string = df['Nominal Composition'].iloc[i][1:space_position] + \
-#                                         first_position_in_string + \
-#                                         df['Nominal Composition'].iloc[i][space_position + 1:]
-#
-#                     elif second_position_in_string == ' ':
-#                         third_position_in_string = df['Nominal Composition'].iloc[i][2]
-#                         if third_position_in_string.isnumeric():
-#                             space_position = df['Nominal Composition'].iloc[i].rfind(' /')
-#                             my_new_string = first_position_in_string + \
-#                                             df['Nominal Composition'].iloc[i][3:space_position] + \
-#                                             third_position_in_string + \
-#                                             df['Nominal Composition'].iloc[i][space_position + 1:]
-#                         elif third_position_in_string == '-':
-#                             fourth_position_in_string = df['Nominal Composition'].iloc[i][4]
-#                             space_position = df['Nominal Composition'].iloc[i].rfind(' /')
-#                             my_new_string = first_position_in_string + \
-#                                             df['Nominal Composition'].iloc[i][4:space_position] + \
-#                                             third_position_in_string + \
-#                                             fourth_position_in_string + \
-#                                             df['Nominal Composition'].iloc[i][space_position + 1:]
-#
-#                 df.iloc[i, j] = my_new_string
-#
-#             if '/ ' in df['Nominal Composition'].iloc[i]:
-#                 last_position_in_string = df['Nominal Composition'].iloc[i][-1]
-#                 space_position = df['Nominal Composition'].iloc[i].rfind('/ ')
-#                 space_position = space_position + 1
-#                 my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
-#                                 last_position_in_string + \
-#                                 df['Nominal Composition'].iloc[i][space_position + 1:-1]
-#
-#                 df.iloc[i, j] = my_new_string
-#
-#             last_position_in_string = df['Nominal Composition'].iloc[i][-1]
-#             if ' /' in df['Nominal Composition'].iloc[i] and last_position_in_string.isnumeric():
-#                 space_position = df['Nominal Composition'].iloc[i].rfind(' /')
-#                 my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
-#                                 last_position_in_string + \
-#                                 df['Nominal Composition'].iloc[i][space_position + 1:-1]
-#
-#                 df.iloc[i, j] = my_new_string
-#
-#             if ' /' in df['Nominal Composition'].iloc[i] and df['Nominal Composition'].iloc[i].count(' ')==2\
-#                     and df['Nominal Composition'].iloc[i][-1]!=' ':
-#                 last_space_position = df['Nominal Composition'].iloc[i].rfind(' ')
-#                 first_space_position = df['Nominal Composition'].iloc[i].find(' ')
-#                 char_after_last_space = df['Nominal Composition'].iloc[i][last_space_position+1]
-#                 my_new_string = df['Nominal Composition'].iloc[i][:first_space_position] + \
-#                                 char_after_last_space + \
-#                                 df['Nominal Composition'].iloc[i][first_space_position + 1:last_space_position] + \
-#                                 df['Nominal Composition'].iloc[i][last_space_position + 2:]
-#
-#                 df.iloc[i, j] = my_new_string
-#
-#             if ' /' in df['Nominal Composition'].iloc[i] and df['Nominal Composition'].iloc[i].count(' ')>=2:
-#                 space_position = df['Nominal Composition'].iloc[i].find(' /')
-#                 remainging_string = df['Nominal Composition'].iloc[i][space_position + 1:-1]
-#                 next_space = remainging_string.find(' ')
-#                 current_char = df['Nominal Composition'].iloc[i][space_position+1+next_space+1]
-#                 if current_char.isnumeric():
-#                     my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
-#                                     current_char + \
-#                                     df['Nominal Composition'].iloc[i][space_position + 1:space_position+1+next_space] +\
-#                                     df['Nominal Composition'].iloc[i][space_position+1+next_space+2:]
-#                 df.iloc[i, j] = my_new_string
-#
-#             last_position_in_string = df['Nominal Composition'].iloc[i][-1]
-#             penultimate_position_in_string = df['Nominal Composition'].iloc[i][-2]
-#             if ' /' in df['Nominal Composition'].iloc[i] and \
-#                     last_position_in_string == ' ' and \
-#                     penultimate_position_in_string.isnumeric():
-#                 space_position = df['Nominal Composition'].iloc[i].rfind(' /')
-#                 my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
-#                                 penultimate_position_in_string + \
-#                                 df['Nominal Composition'].iloc[i][space_position + 1:-2]
-#
-#                 df.iloc[i, j] = my_new_string
-#
-#             if ' /' in df['Nominal Composition'].iloc[i] and \
-#                     ' 1-' in df['Nominal Composition'].iloc[i]:
-#                 space_position = df['Nominal Composition'].iloc[i].find(' /')
-#                 number_position = df['Nominal Composition'].iloc[i][:space_position] + \
-#                                 penultimate_position_in_string + \
-#                                 df['Nominal Composition'].iloc[i][space_position + 1:-2]
-#
-#                 df.iloc[i, j] = my_new_string
-#         # rotina para remover espaços sobrando após a rotina de reorganização acima
-#         # for i in range(len(df['Nominal Composition'])):
-#         #     j = df.columns.get_loc('Nominal Composition')
-#         #     if ' ' in df['Nominal Composition'].iloc[i]:
-#         #         space_position = df['Nominal Composition'].iloc[i].rfind(' ')
-#         #         my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
-#         #                         df['Nominal Composition'].iloc[i][space_position + 1:]
-#         #         df.iloc[i, j] = my_new_string
-#     return df
+def corrigir_composicao_nominal_rfind(df):
+    if "Nominal Composition" in df.columns:
+        for i in range(len(df['Nominal Composition'])):
+            j = df.columns.get_loc('Nominal Composition')
+            if ' /' in df['Nominal Composition'].iloc[i]:
+                first_position_in_string = df['Nominal Composition'].iloc[i][0]
+                if first_position_in_string == '–':
+                    second_position_in_string = df['Nominal Composition'].iloc[i][1]
+                    space_position = df['Nominal Composition'].iloc[i].rfind(' /')
+                    my_new_string = df['Nominal Composition'].iloc[i][2:space_position] + \
+                                    first_position_in_string + \
+                                    second_position_in_string + \
+                                    df['Nominal Composition'].iloc[i][space_position + 1:]
+
+                elif first_position_in_string.isnumeric():
+                    second_position_in_string = df['Nominal Composition'].iloc[i][1]
+
+                    if second_position_in_string.isnumeric():
+                        space_position = df['Nominal Composition'].iloc[i].rfind(' /')
+                        my_new_string = df['Nominal Composition'].iloc[i][1:space_position] + \
+                                        first_position_in_string + \
+                                        df['Nominal Composition'].iloc[i][space_position + 1:]
+
+                    elif second_position_in_string == ' ':
+                        third_position_in_string = df['Nominal Composition'].iloc[i][2]
+                        if third_position_in_string.isnumeric():
+                            space_position = df['Nominal Composition'].iloc[i].rfind(' /')
+                            my_new_string = first_position_in_string + \
+                                            df['Nominal Composition'].iloc[i][3:space_position] + \
+                                            third_position_in_string + \
+                                            df['Nominal Composition'].iloc[i][space_position + 1:]
+                        elif third_position_in_string == '-':
+                            fourth_position_in_string = df['Nominal Composition'].iloc[i][4]
+                            space_position = df['Nominal Composition'].iloc[i].rfind(' /')
+                            my_new_string = first_position_in_string + \
+                                            df['Nominal Composition'].iloc[i][4:space_position] + \
+                                            third_position_in_string + \
+                                            fourth_position_in_string + \
+                                            df['Nominal Composition'].iloc[i][space_position + 1:]
+
+                df.iloc[i, j] = my_new_string
+
+            if '/ ' in df['Nominal Composition'].iloc[i]:
+                last_position_in_string = df['Nominal Composition'].iloc[i][-1]
+                space_position = df['Nominal Composition'].iloc[i].rfind('/ ')
+                space_position = space_position + 1
+                my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
+                                last_position_in_string + \
+                                df['Nominal Composition'].iloc[i][space_position + 1:-1]
+
+                df.iloc[i, j] = my_new_string
+
+            last_position_in_string = df['Nominal Composition'].iloc[i][-1]
+            if ' /' in df['Nominal Composition'].iloc[i] and last_position_in_string.isnumeric():
+                space_position = df['Nominal Composition'].iloc[i].rfind(' /')
+                my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
+                                last_position_in_string + \
+                                df['Nominal Composition'].iloc[i][space_position + 1:-1]
+
+                df.iloc[i, j] = my_new_string
+
+            if ' /' in df['Nominal Composition'].iloc[i] and df['Nominal Composition'].iloc[i].count(' ')==2\
+                    and df['Nominal Composition'].iloc[i][-1]!=' ':
+                last_space_position = df['Nominal Composition'].iloc[i].rfind(' ')
+                first_space_position = df['Nominal Composition'].iloc[i].find(' ')
+                char_after_last_space = df['Nominal Composition'].iloc[i][last_space_position+1]
+                my_new_string = df['Nominal Composition'].iloc[i][:first_space_position] + \
+                                char_after_last_space + \
+                                df['Nominal Composition'].iloc[i][first_space_position + 1:last_space_position] + \
+                                df['Nominal Composition'].iloc[i][last_space_position + 2:]
+
+                df.iloc[i, j] = my_new_string
+
+            if ' /' in df['Nominal Composition'].iloc[i] and df['Nominal Composition'].iloc[i].count(' ')>=2:
+                space_position = df['Nominal Composition'].iloc[i].find(' /')
+                remainging_string = df['Nominal Composition'].iloc[i][space_position + 1:-1]
+                next_space = remainging_string.find(' ')
+                current_char = df['Nominal Composition'].iloc[i][space_position+1+next_space+1]
+                if current_char.isnumeric():
+                    my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
+                                    current_char + \
+                                    df['Nominal Composition'].iloc[i][space_position + 1:space_position+1+next_space] +\
+                                    df['Nominal Composition'].iloc[i][space_position+1+next_space+2:]
+                df.iloc[i, j] = my_new_string
+
+            last_position_in_string = df['Nominal Composition'].iloc[i][-1]
+            penultimate_position_in_string = df['Nominal Composition'].iloc[i][-2]
+            if ' /' in df['Nominal Composition'].iloc[i] and \
+                    last_position_in_string == ' ' and \
+                    penultimate_position_in_string.isnumeric():
+                space_position = df['Nominal Composition'].iloc[i].rfind(' /')
+                my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
+                                penultimate_position_in_string + \
+                                df['Nominal Composition'].iloc[i][space_position + 1:-2]
+
+                df.iloc[i, j] = my_new_string
+
+            if ' /' in df['Nominal Composition'].iloc[i] and \
+                    ' 1-' in df['Nominal Composition'].iloc[i]:
+                space_position = df['Nominal Composition'].iloc[i].find(' /')
+                number_position = df['Nominal Composition'].iloc[i][:space_position] + \
+                                penultimate_position_in_string + \
+                                df['Nominal Composition'].iloc[i][space_position + 1:-2]
+
+                df.iloc[i, j] = my_new_string
+        # rotina para remover espaços sobrando após a rotina de reorganização acima
+        # for i in range(len(df['Nominal Composition'])):
+        #     j = df.columns.get_loc('Nominal Composition')
+        #     if ' ' in df['Nominal Composition'].iloc[i]:
+        #         space_position = df['Nominal Composition'].iloc[i].rfind(' ')
+        #         my_new_string = df['Nominal Composition'].iloc[i][:space_position] + \
+        #                         df['Nominal Composition'].iloc[i][space_position + 1:]
+        #         df.iloc[i, j] = my_new_string
+    return df
 
 
 # entradas para funcao table_reader.Read para cada padrão de pagina

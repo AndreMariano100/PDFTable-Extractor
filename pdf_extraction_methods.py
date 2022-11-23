@@ -20,6 +20,190 @@ def clear_table(df):
     return df
 
 
+def adjust_chemical_composition(data_frame=None):
+    """ Adjust the chemical composition read from file """
+
+    def clean_labels(df):
+
+        j = df.columns.get_loc('Nominal Composition')
+        cases_count = {}
+
+        for i in range(len(df)):
+
+            current = str(df['Nominal Composition'].iloc[i])
+
+            if '/' not in current:
+                continue
+
+            my_new_string = ''
+            char_1 = current[0]
+            char_2 = current[1]
+            char_3 = current[2]
+            char_4 = current[4]
+            char_b = current[-2]
+            char_l = current[-1]
+
+            case = ''
+
+            if ' /' in current:
+
+                if char_1 == '–':
+                    if current.count(' /') == 1:
+                        char_2 = current[1]
+                        space_position = current.rfind(' /')
+                        my_new_string = current[2:space_position] + char_1 + char_2 + current[space_position + 1:]
+                        case = 'case 1'
+                    else:
+                        my_new_string = current[1:].strip().replace(' ', '-')
+                        my_new_string = my_new_string.replace('–/', '/')
+                        case = 'case 1 modified'
+
+                    # "–11 /4Cr 1 /2Mo–Si" -> "1/4Cr1–1/2Mo–Si"
+                    # "–11Cr /4Si–V" -> "1Cr–1/4Si–V"
+                    # "–1C /4Mo" -> "C–1/4Mo"
+
+                elif char_1.isnumeric():
+
+                    if char_l.isnumeric():
+                        position_1 = current.find(' /')
+                        position_2 = current.rfind(' /')
+
+                        my_new_string = current[1:position_1] + char_l + current[position_1+1: position_2] +\
+                                        char_1 + current[position_2+1:-1].rstrip()
+                        case = 'case 2'
+
+                        if my_new_string[-1].isnumeric():
+                            my_new_string = my_new_string[-1] + my_new_string[:-1]
+                            case = 'case 2 modified'
+
+                    elif char_2.isnumeric() or char_2.isalpha():
+                        space_position = current.find(' /')
+                        my_new_string = current[1:space_position] + char_1 + current[space_position + 1:]
+                        case = 'case 3'
+                        if char_l.isnumeric():
+                            space_position = current.rfind(' /')
+                            my_new_string = current[1:space_position] + char_l + current[space_position + 1:-1]
+                            my_new_string.replace(' ', '')
+                            case = 'case 4'
+
+                    elif char_2 == ' ':
+                        if char_3.isnumeric():
+                            space_position = current.rfind(' /')
+                            my_new_string = char_1 + current[3:space_position] + char_3 + current[space_position + 1:]
+                            case = 'case 5'
+
+                        elif char_3 == '–':
+                            space_position = current.rfind(' /')
+                            my_new_string = current[3:space_position] + char_3 + char_1 + \
+                                            current[space_position + 1:]
+                            case = 'case 6'
+
+                        elif char_3 == '/':
+
+                            space_position = current.rfind(' /')
+                            my_new_string = char_1 + current[space_position:]
+                            case = 'case 7'
+
+                    else:
+                        space_position = current.rfind(' /')
+                        my_new_string = current[:space_position] + char_l + current[space_position + 1:-1]
+                        case = 'case 8'
+
+                elif current.count(' ') == 2 and char_l != ' ':
+                    last_space_position = current.rfind(' ')
+                    first_space_position = current.find(' ')
+                    char_after_last_space = current[last_space_position+1]
+                    my_new_string = current[:first_space_position] + char_after_last_space + \
+                                    current[first_space_position + 1:last_space_position] + \
+                                    current[last_space_position + 2:]
+                    case = 'case 9'
+
+                elif current.count(' ') > 2:
+                    space_position = current.find(' /')
+                    remaining_string = current[space_position + 1:-1]
+                    next_space = remaining_string.find(' ')
+                    current_char = current[space_position+1+next_space+1]
+                    if current_char.isnumeric():
+                        my_new_string = current[:space_position] + current_char + \
+                                        current[space_position + 1:space_position+1+next_space] + \
+                                        current[space_position+1+next_space+2:]
+                        case = 'case 10'
+
+                elif char_l == ' ' and char_b.isnumeric():
+                    space_position = current.rfind(' /')
+                    my_new_string = current[:space_position] + char_b + \
+                                    current[space_position + 1:-2]
+                    case = 'case 11'
+
+                elif ' 1-' in current:
+                    space_position = current.find(' /')
+                    my_new_string = current[:space_position] + char_b + \
+                                    current[space_position + 1:-2]
+                    case = 'case 12'
+
+                else:
+                    case = 'case 13'
+                    my_new_string = current
+
+                my_new_string = my_new_string.replace(' ', '')
+
+                df.iloc[i, j] = my_new_string
+
+            elif '/ ' in current:
+                space_position = current.rfind('/ ')
+                space_position = space_position + 1
+                my_new_string = current[:space_position] + char_l + current[space_position + 1:-1]
+
+                df.iloc[i, j] = my_new_string
+
+            else:
+                case = 'case 14'
+                my_new_string = current.replace(' ', '')
+
+            if case not in cases_count:
+                cases_count[case] = 1
+            else:
+                cases_count[case] += 1
+
+            if case:
+                print(f'{case}: "{current}" -> "{my_new_string}"')
+            else:
+                print(f'"{current}", {case}')
+                input()
+
+        print(cases_count)
+
+        return df
+
+    if not data_frame:
+        import os
+        from tkinter.filedialog import askopenfilename
+
+        try:
+            desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
+            file_name = askopenfilename(initialdir=desktop, title="Select File",
+                                        filetypes=(("CSV files", "*.csv"),
+                                                   ("All files", "*.*")))
+        except IOError or FileNotFoundError:
+            return
+        else:
+            if not file_name:
+                return
+
+        local_data_frame = pd.read_csv(file_name, sep=';')
+    else:
+        local_data_frame = data_frame
+
+    new_df = clean_labels(local_data_frame)
+
+    old_values = local_data_frame['Nominal Composition'].tolist()
+    new_values = new_df['Nominal Composition'].tolist()
+
+    for a, b in zip(old_values, new_values):
+        if a != b:
+            print(f'{a} -> {b}')
+
+
 def read_single_page(pdf_path, pdf_page, top, bottom, left, right, columns_positions, columns_names):
     """
     Main method to read the PDF page, one at a time.
@@ -132,3 +316,7 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
     df = df.reset_index(drop=True)
     # print('Extraction finished')
     return df
+
+
+if __name__ == '__main__':
+    adjust_chemical_composition()
