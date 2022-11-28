@@ -12,7 +12,7 @@ import pandas
 from pdf_extraction_methods import read_pdf_table
 
 
-class ASMEPdfExtract(tk.Tk):
+class PdfTableExtractor(tk.Tk):
     """ Main application window"""
 
     def __init__(self):
@@ -22,11 +22,11 @@ class ASMEPdfExtract(tk.Tk):
             super().__init__()
             self.style = Style(theme='darkly')
             self.path = os.getcwd()
-            self.iconbitmap(os.path.join(self.path, 'petrobras.ico'))
-            self.title('ASME PDF Extract Tool')
+            self.iconbitmap(os.path.join(self.path, 'DATA/petrobras.ico'))
+            self.title('PDF Table Data Extraction Tool - version 2022-R1')
 
-            window_width = 800
-            window_height = 600
+            window_width = 400
+            window_height = 120
             self.minsize(window_width, window_height)
             self.resizable(True, True)
             self.geometry(self.screen_position(self))
@@ -34,7 +34,7 @@ class ASMEPdfExtract(tk.Tk):
             self.protocol("WM_DELETE_WINDOW", self.finish)
 
             self.columnconfigure(0, weight=0, minsize=400)
-            self.columnconfigure(1, weight=1, minsize=100)
+            self.columnconfigure(1, weight=1)
             self.rowconfigure(0, weight=1)
 
         # Left and right frames
@@ -44,36 +44,37 @@ class ASMEPdfExtract(tk.Tk):
             left_frame.columnconfigure(0, weight=1)
             left_frame.rowconfigure(3, weight=1)
 
-            self.right_frame = ttk.Frame(self, padding=10)
-            self.right_frame.grid(row=0, column=1, sticky='nsew')
-            self.right_frame.columnconfigure(0, weight=1)
-            self.right_frame.rowconfigure(0, weight=1)
+            right_frame = ttk.Frame(self, padding=10)
+            right_frame.grid(row=0, column=1, sticky='nsew')
+            right_frame.columnconfigure(0, weight=1)
+            right_frame.rowconfigure(0, weight=1)
 
-        # Left frame - open pdf and navigation
+        # Left frame - open pdf button and pages navigation
         if True:
             local_frame = ttk.LabelFrame(left_frame, text='PDF File Selection', padding=10)
             local_frame.grid(row=0, column=0, sticky='nsew')
             local_frame.columnconfigure(0, weight=1)
+            local_frame.columnconfigure(1, weight=1)
+            local_frame.columnconfigure(2, weight=0)
             local_frame.rowconfigure(0, weight=1)
             local_frame.rowconfigure(1, weight=1)
-            local_frame.rowconfigure(2, weight=1)
 
             widget = ttk.Button(local_frame, text='Select PDF file', command=self.select_pdf_file)
-            widget.grid(row=0, column=0, columnspan=2, sticky='nsew')
+            widget.grid(row=0, column=0, sticky='nsew')
 
-            widget = ttk.Label(local_frame, text='View PDF Page:', anchor='e')
-            widget.grid(row=1, column=0, sticky='nsew', pady=(5, 0))
+            widget = ttk.Label(local_frame, text='View Page:', anchor='e')
+            widget.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
 
             self.pdf_page_var = tk.IntVar(value=0)
             self.pdf_page_widget = ttk.Spinbox(local_frame, from_=1, to=0, increment=1, width=6, state='disabled',
                                                command=self.spin_box_selected, textvariable=self.pdf_page_var,
                                                justify='center')
-            self.pdf_page_widget.grid(row=1, column=1, sticky='nsew', pady=(5, 0), padx=(5, 0))
+            self.pdf_page_widget.grid(row=0, column=2, sticky='nsew', padx=(5, 0))
             self.pdf_page_widget.bind('<Return>', self.pdf_page_selected)
             self.pdf_page_widget.bind('<FocusOut>', self.pdf_page_selected)
 
             self.pdf_page_label = ttk.Label(local_frame, text='', anchor='e', style='secondary.TLabel')
-            self.pdf_page_label.grid(row=2, column=0, columnspan=2, sticky='nsew', pady=(5, 0))
+            self.pdf_page_label.grid(row=1, column=0, columnspan=3, sticky='nsew', pady=(5, 0))
 
         # Left frame - pdf page range
         if True:
@@ -138,7 +139,7 @@ class ASMEPdfExtract(tk.Tk):
                 local_frame.columnconfigure(2, weight=1)
 
                 button = ttk.Button(local_frame, text='Load Borders Data', command=self.load_table_data,
-                                    style='info.TButton')
+                                    style='primary.TButton')
                 button.grid(row=0, column=0, sticky='nsew')
                 button = ttk.Button(local_frame, text='Clear Borders Data', command=self.clear_table_data,
                                     style='danger.TButton')
@@ -169,12 +170,18 @@ class ASMEPdfExtract(tk.Tk):
                 self.borders_data_frame = ttk.Frame(self.border_configuration_frame)
                 self.borders_data_frame.grid(row=2, column=0, sticky='nsew')
                 self.borders_data_frame.columnconfigure(0, weight=1)
-                self.borders_data_frame.columnconfigure(1, weight=1)
+                self.borders_data_frame.rowconfigure(0, weight=0)
+                self.borders_data_frame.rowconfigure(1, weight=1)
+
+                local_frame = ttk.Frame(self.borders_data_frame)
+                local_frame.grid(row=0, column=0, sticky='ew')
+                local_frame.columnconfigure(0, weight=1)
+                local_frame.columnconfigure(1, weight=1)
 
                 labels = ('Top Border', 'Bottom Border', 'Left Border', 'Right Border')
                 self.borders_widgets = []
                 for i, text in enumerate(labels):
-                    widget = cw.LabelSpinbox(self.borders_data_frame, label_text=f'{text}:', spin_start=0,
+                    widget = cw.LabelSpinbox(local_frame, label_text=f'{text}:', spin_start=0,
                                              spin_end=10, spin_increment=1, entry_method=self.read_border_values,
                                              entry_width=4, spin_precision=0, entry_type='int')
                     widget.grid(row=i // 2, column=i % 2, sticky='nsew', pady=2)
@@ -182,8 +189,8 @@ class ASMEPdfExtract(tk.Tk):
                     widget.spin.unbind('<MouseWheel>')
                     self.borders_widgets.append(widget)
 
-                widget = cw.LabelSpinbox(self.borders_data_frame, label_text=f'Number of Columns:', spin_start=1,
-                                         spin_end=20, spin_increment=1, entry_method=self.read_border_values,
+                widget = cw.LabelSpinbox(local_frame, label_text=f'Number of Columns:', spin_start=1,
+                                         spin_end=25, spin_increment=1, entry_method=self.read_border_values,
                                          entry_width=4, spin_precision=0, entry_type='int')
                 widget.grid(row=2, column=0, columnspan=2,  sticky='nsew', pady=2)
                 widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
@@ -192,11 +199,17 @@ class ASMEPdfExtract(tk.Tk):
 
             # Internal borders data
             if True:
-                for i in range(20):
-                    widget = cw.LabelSpinbox(self.borders_data_frame, label_text=f'Column {i+1} End:', spin_start=0,
+                local_frame = ttk.Frame(self.borders_data_frame)
+                local_frame.grid(row=1, column=0, sticky='nsew')
+                local_frame.columnconfigure(0, weight=1)
+                local_frame.columnconfigure(1, weight=1)
+                local_frame.columnconfigure(2, weight=1)
+
+                for i in range(25):
+                    widget = cw.LabelSpinbox(local_frame, label_text=f'Col. {i+1}:', spin_start=0,
                                              spin_end=10, spin_increment=1, entry_method=self.read_border_values,
                                              entry_width=4, spin_precision=0, entry_type='int')
-                    widget.grid(row=i // 2 + 3, column=i % 2, sticky='nsew', pady=1)
+                    widget.grid(row=i // 3 + 3, column=i % 3, sticky='nsew', pady=1)
                     widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
                     widget.spin.unbind('<MouseWheel>')
                     self.borders_widgets.append(widget)
@@ -219,7 +232,7 @@ class ASMEPdfExtract(tk.Tk):
 
         # Right frame - canvas to show the pdf pages
         if True:
-            self.pdf_canvas = tk.Canvas(self.right_frame, borderwidth=0, highlightthickness=0)
+            self.pdf_canvas = tk.Canvas(right_frame, borderwidth=0, highlightthickness=0)
             self.pdf_canvas.grid(row=0, column=0, sticky='nsew')
             self.pdf_canvas.configure(bg=self.style.colors.dark)
             self.pdf_canvas.bind("<MouseWheel>", self.pdf_page_scroll)
@@ -233,8 +246,8 @@ class ASMEPdfExtract(tk.Tk):
             self.pdf_file_name = ''                 # PDF file location
             self.pdf_file_images = []               # List with all the pdf pages in a byte format
             self.number_of_models = 1               # number of border models
-            self.border_values_dict = {}            # dictionary with the border values (not actual position)
-            self.header_dict = {}                   # dictionary for the table headers
+            self.border_values_dict = {}            # dictionary with the border values
+            self.header_dict = {}                   # dictionary for the tables headers
             self.border_labels_list = \
                 ['Type 1 Border']                   # list of the border labels including skip pages
             self.extracted_tables = pandas.DataFrame()  # dataframe that will hold the extracted tables
@@ -322,15 +335,34 @@ class ASMEPdfExtract(tk.Tk):
         self.borders_widgets[0].end = image_height
         self.borders_widgets[1].spin.config(to=image_height)
         self.borders_widgets[1].end = image_height
+        self.borders_widgets[1].set(image_height)
+
         self.borders_widgets[2].spin.config(to=image_width)
         self.borders_widgets[2].end = image_width
         self.borders_widgets[3].spin.config(to=image_width)
         self.borders_widgets[3].end = image_width
+        self.borders_widgets[3].set(image_width)
 
-        # Buttons frame
+        for widget in self.borders_widgets:
+            if 'Col.' in widget.label.cget('text'):
+                widget.spin.config(to=image_width)
+                widget.end = image_width
+
+        # Adjust the buttons frame
         self.buttons_frame.grid()
 
+        # Adjust the canvas size
+        self.pdf_canvas.configure(width=image_width, height=image_width)
+        self.columnconfigure(1, minsize=image_width+10)
+        window_width = 400 + image_width + 20
+        window_height = 600
+        self.minsize(window_width, window_height)
+        self.resizable(False, True)
+        self.geometry(self.screen_position(self))
+        self.update()
+
         self.bind('<Configure>', self.draw_borders)
+        self.draw_borders()
 
     # PDF pages navigation ---------------------------------------------------------------------------------------------
     def spin_box_selected(self):
@@ -602,15 +634,14 @@ class ASMEPdfExtract(tk.Tk):
 
         # Shows / hides the internal columns widgets
         if True:
-            num_columns = self.borders_widgets[4].get() or 1
-            num_columns = int(num_columns)
+            num_columns = int(self.borders_widgets[4].get()) or 1
             for i in range(num_columns - 1):
                 self.borders_widgets[5 + i].grid()
 
             for i in range(4 + num_columns, len(self.borders_widgets)):
                 self.borders_widgets[i].grid_remove()
                 self.borders_widgets[i].set(0)
-                self.border_values_dict[current_border][f'Column {i-4} End'] = 0
+                self.border_values_dict[current_border][f'Col. {i-4}'] = 0
 
         # Reads main borders data and protects against nonsense
         if True:
@@ -654,7 +685,7 @@ class ASMEPdfExtract(tk.Tk):
                 if not i:
                     continue
                 if value < columns_borders[i-1]:
-                    columns_borders[i] = columns_borders[i-1] + 5
+                    columns_borders[i] = columns_borders[i-1] + 10
 
                 if value > int(right_border):
                     columns_borders[i] = right_border
@@ -717,7 +748,7 @@ class ASMEPdfExtract(tk.Tk):
             # Shows the Top Level window
             local_top = tk.Toplevel()
             local_top.minsize(600, 150)
-            local_top.iconbitmap(os.path.join(self.path, 'petrobras.ico'))
+            local_top.iconbitmap(os.path.join(self.path, 'DATA/petrobras.ico'))
             local_top.title('ASME PDF Extract Tool')
             local_top.columnconfigure(0, weight=1)
             local_top.configure(padx=10, pady=10)
@@ -786,25 +817,25 @@ class ASMEPdfExtract(tk.Tk):
         self.clear_borders()
 
         # Draw the top border
-        if data['Top Border']:
+        if True:
             y_pos = float(data['Top Border'])
             location = (0, y_pos, canvas_size[0], y_pos)
-            location_2 = (5, y_pos+5)
+            location_2 = (int(canvas_size[0]/2), y_pos+5)
             self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['top border line', 'draggable'])
             self.pdf_canvas.create_text(*location_2, text=f'Top Border', anchor='nw',
                                         fill='red', tag='top border text')
 
         # Draw the bottom border
-        if data['Bottom Border']:
+        if True:
             y_pos = float(data['Bottom Border'])
             location = (0, y_pos, canvas_size[0], y_pos)
-            location_2 = (5, y_pos-5)
+            location_2 = (int(canvas_size[0]/2), y_pos-5)
             self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['bottom border line', 'draggable'])
             self.pdf_canvas.create_text(*location_2, text=f'Bottom Border', anchor='sw',
                                         fill='red', tag='bottom border text')
 
         # Draw the left border
-        if data['Left Border']:
+        if True:
             x_pos = float(data['Left Border'])
             location = (x_pos, 0, x_pos, canvas_size[1])
             location_2 = (x_pos+5, 5)
@@ -813,7 +844,7 @@ class ASMEPdfExtract(tk.Tk):
                                         fill='red', tag='left border text')
 
         # Draw the right border
-        if data['Right Border']:
+        if True:
             x_pos = float(data['Right Border'])
             location = (x_pos, 0, x_pos, canvas_size[1])
             location_2 = (x_pos-5, 5)
@@ -823,12 +854,13 @@ class ASMEPdfExtract(tk.Tk):
 
         # Draws the columns
         if True:
-            internal_borders = {k.replace('Column', 'C'): v for k, v in data.items() if 'End' in k and int(v) != 0}
+            internal_borders = {k.replace('Column', 'C'): v for k, v in data.items() if 'Col.' in k and int(v) != 0}
 
             count = 1
             for k, v in internal_borders.items():
                 x_pos = float(v)
                 self.pdf_canvas.create_line(x_pos, 0, x_pos, canvas_size[1], fill='orange', width=2,
+                                            activefill='red',
                                             tag=[f'column line {count}', 'draggable'])
                 count += 1
 
@@ -1069,5 +1101,5 @@ class ASMEPdfExtract(tk.Tk):
 
 
 if __name__ == '__main__':
-    root = ASMEPdfExtract()
+    root = PdfTableExtractor()
     root.start()
