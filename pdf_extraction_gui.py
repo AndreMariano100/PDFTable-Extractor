@@ -148,7 +148,7 @@ class PdfTableExtractor(tk.Tk):
                                     style='success.TButton')
                 button.grid(row=0, column=2, sticky='nsew', padx=(2, 0))
 
-            # Navigation buttons
+            # Navigation frame
             if True:
                 local_frame = ttk.Frame(self.border_configuration_frame)
                 local_frame.grid(row=1, column=0, sticky='nsew', pady=(0, 5))
@@ -187,6 +187,7 @@ class PdfTableExtractor(tk.Tk):
                     widget.grid(row=i // 2, column=i % 2, sticky='nsew', pady=2)
                     widget.spin.bind("<ButtonRelease-1>", self.read_border_values, add='+')
                     widget.spin.unbind('<MouseWheel>')
+                    widget.label.bind('<Double-Button-1>', self.fill_previous_border_value)
                     self.borders_widgets.append(widget)
 
                 widget = cw.LabelSpinbox(local_frame, label_text=f'Number of Columns:', spin_start=1,
@@ -245,6 +246,7 @@ class PdfTableExtractor(tk.Tk):
         if True:
             self.pdf_file_name = ''                 # PDF file location
             self.pdf_file_images = []               # List with all the pdf pages in a byte format
+            self.pdf_object = fitz.Document()       # Fitz PDF document
             self.number_of_models = 1               # number of border models
             self.border_values_dict = {}            # dictionary with the border values
             self.header_dict = {}                   # dictionary for the tables headers
@@ -279,8 +281,8 @@ class PdfTableExtractor(tk.Tk):
         self.border_values_dict.clear()
         self.clear_borders()
 
-        open_pdf = fitz.open(self.pdf_file_name)
-        total = len(open_pdf)
+        self.pdf_object = fitz.open(self.pdf_file_name)
+        total = self.pdf_object.page_count
 
         progress_bar = cw.ProgressBar(self, message='Reading PDF file...', final_value=total)
 
@@ -288,7 +290,7 @@ class PdfTableExtractor(tk.Tk):
         zoom = 1.0
         mat = fitz.Matrix(zoom, zoom)
 
-        for i, page in enumerate(open_pdf):
+        for i, page in enumerate(self.pdf_object):
             progress_bar.update_bar(i)
             pix = page.get_pixmap(matrix=mat)
             pix1 = fitz.Pixmap(pix, 0) if pix.alpha else pix
@@ -297,7 +299,6 @@ class PdfTableExtractor(tk.Tk):
             self.pdf_file_images.append(timg)
 
         progress_bar.destroy()
-        open_pdf.close()
         self.adjust_widgets()
 
     def adjust_widgets(self):
@@ -728,6 +729,140 @@ class PdfTableExtractor(tk.Tk):
 
         start_page = int(self.start_page.get())
 
+        # Searches for a known table
+        columns_names_dict = {
+            'Table 1A': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm', 'P-No.', 'Group No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
+                      'Applicability and Max. Temperature Limits I', 'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-1',
+                      'Applicability and Max. Temperature Limits XII', 'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '200', '250', '300', '325', '350', '375', '400',
+                      '425', '450', '475'),
+                '4': ('Line No.', '500', '525', '550', '575', '600', '625', '650', '675', '700', '725', '750',
+                      '775', '800', '825', '850', '875', '900')
+            },
+            'Table 1B': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper'),
+                '2': ('Line No.', 'Size/Thickness, mm', 'P-No.', 'Min. Tensile Strength, MPa',
+                      'Min. Yield Strength, MPa',
+                      'Applicability and Max. Temperature Limits I', 'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-1',
+                      'Applicability and Max. Temperature Limits XII', 'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275', '300',
+                      '325', '350', '375', '400', '425', '450', '475'),
+                '4': ('Line No.', '500', '525', '550', '575', '600', '625', '650', '675', '700', '725', '750',
+                      '775', '800', '825', '850', '875', '900')
+            },
+            'Table 2A': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm', 'P-No.', 'Group No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '200', '250', '300',
+                      '325', '350', '375', '400', '425', '450', '475', '500'),
+            },
+            'Table 2B': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm', 'P-No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275', '300',
+                      '325', '350', '375', '400', '425'),
+            },
+            'Table 3': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-1',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'Applicability and Max. Temperature Limits XII',
+                      'Notes',),
+                '3': ('Line No.', '40', '100', '125', '150', '175', '200', '225', '250', '275', '300', '325', '350',
+                      '375', '400', '425', '450', '475'),
+                '4': ('Line No.', '500', '525', '550', '575', '600', '625', '650', '675', '700', '725', '750',
+                      '775', '800', '825', '850', '875', '900')
+            },
+            'Table 4': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'Notes',),
+                '3': ('Line No.', '40', '100', '150', '200', '250', '300', '325', '350',
+                      '375', '400', '425'),
+            },
+            'Table 5': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm', 'P-No.', 'Group No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
+                      'Maximum Use Temperature, °C', 'External Pressure Chart No.', 'Notes'),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275', '300', '325',
+                      '350', '375', '400', '425', '450', '475'),
+                '4': ('Line No.', '500', '525', '550', '575', '600', '625', '650', '675', '700', '725', '750',
+                      '775', '800', '825')
+            },
+            'Table 5B': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper'),
+                '2': ('Line No.', 'Size/Thickness, mm', 'P-No.', 'Min. Tensile Strength, MPa',
+                      'Min. Yield Strength, MPa',
+                      'Maximum Use Temperature, °C', 'External Pressure Chart No.', 'Notes'),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275', '300', '325',
+                      '350', '375', '400', '425', '450', '475'),
+                '4': ('Line No.', '500', '525', '550', '575', '600', '625', '650', '675', '700', '725', '750',
+                      '775', '800', '825', '850', '875', '900')
+            },
+            'Table 6A': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm', 'P-No.', 'Group No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa',
+                      'Min. Yield Strength, MPa', 'External Pressure Chart No.', 'Notes',
+                      '40', '65', '100', '125', '150', '175', '200', '225', '250', '275')
+            },
+            'Table 6B': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm', 'P-No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, MPa',
+                      'Min. Yield Strength, MPa', 'External Pressure Chart No.', 'Notes',
+                      '40', '65', '100', '125', '150', '175', '200', '225', '250', '275')
+            },
+            'Table U': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper',
+                      'Size/Thickness, mm','Min. Tensile Strength, MPa'),
+                '2': ('Line No.', '40', '100', '150', '200', '250', '300', '325', '350',
+                      '375', '400', '425', '450', '475', '500', '525'),
+                '3': ('Line No.', '550', '575', '600', '625', '650', '675', '700', '725', '750',
+                      '775', '800', '825', '850', '875', '900')
+            },
+            'Table Y-1': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper'),
+                '2': ('Size/Thickness, mm', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa', 'Notes'),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275'),
+                '4': ('300', '325', '350', '375', '400', '425', '450', '475', '500', '525'),
+                '5': ('Line No.', '550', '575', '600', '625', '650', '675', '700', '725', '750',
+                      '775', '800', '825', '850', '875', '900')
+            },
+        }
+        search_list = list(columns_names_dict.keys())
+        page = self.pdf_object.load_page(start_page)
+        page_text = page.get_text()
+        selected_table = ''
+        for item in search_list:
+            if item in page_text:
+                selected_table = item
+                break
+
         for i, value in enumerate(self.border_labels_list):
 
             if value == 'SKIP':
@@ -750,8 +885,10 @@ class PdfTableExtractor(tk.Tk):
             local_top.minsize(600, 150)
             local_top.iconbitmap(os.path.join(self.path, 'DATA/petrobras.ico'))
             local_top.title('ASME PDF Extract Tool')
-            local_top.columnconfigure(0, weight=1)
+            for col in range(5):
+                local_top.columnconfigure(col, weight=1)
             local_top.configure(padx=10, pady=10)
+            local_top.geometry(self.screen_position(self))
 
             # Message
             message = f'Enter header from border model {i + 1}'
@@ -772,6 +909,15 @@ class PdfTableExtractor(tk.Tk):
                 except IndexError:
                     value = ''
                 var = tk.StringVar(value=value)
+                if selected_table:
+                    try:
+                        value = columns_names_dict[selected_table][str(i+1)][j]
+                        var.set(value)
+                    except KeyError:
+                        pass
+                    except IndexError:
+                        pass
+
                 entry = ttk.Entry(local_top, textvariable=var, width=30)
                 entry.grid(row=row, column=column, sticky='nsew', padx=(2, 0), pady=(2, 0))
                 all_columns_vars.append(var)
@@ -792,6 +938,32 @@ class PdfTableExtractor(tk.Tk):
             local_list = [var.get() for var in all_columns_vars]
 
             self.header_dict[str(i + 1)] = local_list
+
+    def fill_previous_border_value(self, event):
+        """ Fills the current border with the value from the previous type """
+
+        current_model = self.border_name.cget('text')
+        current_border = current_model.split()[1]
+        if current_border == '1':
+            return
+
+        key = event.widget.cget('text').replace(':', '')
+        previous = int(current_border) - 1
+        try:
+            value = self.border_values_dict[str(previous)][key]
+        except KeyError:
+            return
+        except IndexError:
+            return
+
+        try:
+            self.border_values_dict[current_border][key] = value
+        except KeyError:
+            return
+        except IndexError:
+            return
+
+        self.fill_values()
 
     # Drawing methods --------------------------------------------------------------------------------------------------
     def draw_borders(self, event=None):
