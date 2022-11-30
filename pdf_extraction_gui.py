@@ -252,6 +252,7 @@ class PdfTableExtractor(tk.Tk):
             self.header_dict = {}                   # dictionary for the tables headers
             self.border_labels_list = \
                 ['Type 1 Border']                   # list of the border labels including skip pages
+            self.chemical_composition_data = {}     # chemical composition data for the materials
             self.extracted_tables = pandas.DataFrame()  # dataframe that will hold the extracted tables
 
     # PDF File Selection -----------------------------------------------------------------------------------------------
@@ -681,10 +682,8 @@ class PdfTableExtractor(tk.Tk):
             borders = [int(item.get()) for item in self.borders_widgets if item.winfo_ismapped()]
             columns_borders = borders[5:]
             columns_borders.insert(0, int(left_border))
-            print(columns_borders)
 
             for i, value in enumerate(columns_borders):
-                print(value)
                 if not i:
                     continue
                 if value < columns_borders[i-1]:
@@ -1189,8 +1188,21 @@ class PdfTableExtractor(tk.Tk):
         if not self.pdf_file_images:
             return
 
+        # Reads the chemical composition data
+        file_path = os.path.join(self.path, 'DATA/chemical_composition.json')
+        try:
+            with open(file_path, 'r') as file_object:
+                self.chemical_composition_data = json.load(file_object)
+
+        except FileNotFoundError:
+            self.chemical_composition_data = {}
+
         # Starts the extraction thread
         self.perform_extraction()
+
+        # saves the chemical composition data
+        with open(file_path, 'w') as file_object:
+            json.dump(self.chemical_composition_data, file_object)
 
         # Saves the extracted data
         self.save_csv_table()
