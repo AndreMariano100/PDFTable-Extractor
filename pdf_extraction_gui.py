@@ -681,8 +681,10 @@ class PdfTableExtractor(tk.Tk):
             borders = [int(item.get()) for item in self.borders_widgets if item.winfo_ismapped()]
             columns_borders = borders[5:]
             columns_borders.insert(0, int(left_border))
+            print(columns_borders)
 
             for i, value in enumerate(columns_borders):
+                print(value)
                 if not i:
                     continue
                 if value < columns_borders[i-1]:

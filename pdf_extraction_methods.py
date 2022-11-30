@@ -24,19 +24,31 @@ def clear_table(df):
 def adjust_chemical_composition(data_frame=None):
     """ Adjust the chemical composition read from file """
 
+    """
+    1/4 ¼
+    1/2 ½
+    3/4 ¾
+    1/5 ⅕
+    1/3 ⅓
+    """
+
     master_translation_dict = {
         '1C– /4Mo': 'C–1/4Mo',
         'C– /4Mo': 'C–1/4Mo',
         '1C– /2Mo': 'C–1/2Mo',
         'C– /2Mo': 'C–1/2Mo',
+        'C –1/2Mo': 'C–1/2Mo',
+        'C–1/2Mo': 'C–1/2Mo',
 
         '1 1/2Cr– /5Mo': '1/2Cr–1/5Mo',
         '/2Cr– /5Mo': '1/2Cr–1/5Mo',
         '1 1/2Cr– /5Mo–V': '1/2Cr–1/5Mo–V',
         '/2Cr– /5Mo–V': '1/2Cr–1/5Mo–V',
+        '1 /2Cr –1/5Mo–V': '1/2Cr–1/5Mo–V',
         '1 1/2Cr– /4Mo–Si': '1/2Cr–1/4Mo–Si',
         '/2Cr– /4Mo–Si': '1/2Cr–1/4Mo–Si',
         '1 /2Cr– /2Mo1': '1/2Cr–1/2Mo',
+        '1 /2Cr –1/2Mo': '1/2Cr–1/2Mo',
         '1 1/2Cr– /2Mo': '1/2Cr–1/2Mo',
         '/2Cr– /2Mo': '1/2Cr–1/2Mo',
 
@@ -47,8 +59,11 @@ def adjust_chemical_composition(data_frame=None):
 
         '11Cr– /5Mo': '1Cr–1/5Mo',
         '1Cr– /5Mo':  '1Cr–1/5Mo',
+        '1Cr –1/5Mo': '1Cr–1/5Mo',
         '11Cr– /2Mo': '1Cr–1/2Mo',
         '1Cr– /2Mo': '1Cr–1/2Mo',
+        '1Cr–1/2Mo': '1Cr–1/2Mo',
+        '1Cr –1/2Mo': '1Cr–1/2Mo',
         '11Cr– /2Mo–V': '1Cr–1/2Mo–V',
         '1Cr– /2Mo–V': '1Cr–1/2Mo–V',
         '11Cr– /4Si–V': '1Cr–1/4Si–V',
@@ -56,27 +71,38 @@ def adjust_chemical_composition(data_frame=None):
 
         '11 /4Cr– /2Mo1': '1 1/4Cr–1/2Mo',
         '1 /4Cr– /2Mo': '1 1/4Cr–1/2Mo',
+        '1 /4Cr–1/2Mo': '1 1/4Cr–1/2Mo',
+        '1 1 /4Cr –1/2Mo': '1 1/4Cr–1/2Mo',
         '11 /4Cr– /2Mo–Si1': '1 1/4Cr–1/2Mo–Si',
         '1 1 /4Cr– /2Mo–Si1': '1 1/4Cr–1/2Mo–Si',
+        '1 /4Cr–1/2Mo–Si':  '1 1/4Cr–1/2Mo–Si',
+        '1 1 /4Cr –1/2Mo–Si': '1 1/4Cr–1/2Mo–Si',
         '1 /4Cr– /2Mo–Si': '1 1/4Cr–1/2Mo–Si',
 
         '1 /4Cr– /2Mo–Cu': '1 3/4Cr–1/2Mo–Cu',
         '11 /4Cr– /2Mo–Cu3': '1 3/4Cr–1/2Mo–Cu',
         '11 /4Cr– /2Mo–Ti3': '1 3/4Cr–1/2Mo–Ti',
         '1 /4Cr– /2Mo–Ti': '1 3/4Cr–1/2Mo–Ti',
+        '1 /4Cr–1/2Mo–Ti': '1 3/4Cr–1/2Mo–Ti',
 
         '12 /4Cr–1Mo': '2 1/4Cr–1Mo',
         '2 /4Cr–1Mo': '2 1/4Cr–1Mo',
+        '1 2 /4Cr 1Mo–': '2 1/4Cr–1Mo',
         '12 /4Cr–1Mo–V': '2 1/4Cr–1Mo–V',
         '2 /4Cr–1Mo–V': '2 1/4Cr–1Mo–V',
 
         '13Cr–1Mo– /4V–Ti–B': '3Cr–1Mo–1/4V–Ti–B',
         '3Cr–1Mo– /4V–Ti–B': '3Cr–1Mo–1/4V–Ti–B',
+        '3Cr–1Mo–1/4V–Ti–B': '3Cr–1Mo–1/4V–Ti–B',
         '13Cr–1Mo– /4V–Cb–Ca': '3Cr–1Mo–1/4V–Cb–Ca',
         '3Cr–1Mo– /4V–Cb–Ca': '3Cr–1Mo–1/4V–Cb–Ca',
+        '3Cr– 11Mo– /4V–Cb–Ca': '3Cr–1Mo–1/4V–Cb–Ca',
+        '3Cr–1Mo–1/4V–Cb–Ca': '3Cr–1Mo–1/4V–Cb–Ca',
 
         '15Cr– /2Mo': '5Cr–1/2Mo',
         '5Cr– /2Mo': '5Cr–1/2Mo',
+        '5Cr –1/2Mo': '5Cr–1/2Mo',
+        '5Cr–1/2Mo': '5Cr–1/2Mo',
         '15Cr– /2Mo–Si': '5Cr–1/2Mo–Si',
         '5Cr– /2Mo–Si': '5Cr–1/2Mo–Si',
         '15Cr– /2Mo–Ti': '5Cr–1/2Mo–Ti',
@@ -84,32 +110,49 @@ def adjust_chemical_composition(data_frame=None):
 
         '1Mn– /4Mo': 'Mn–1/4Mo',
         'Mn– /4Mo': 'Mn–1/4Mo',
+        'Mn –1/4Mo': 'Mn–1/4Mo',
         '1Mn– /4Mo–V': 'Mn–1/4Mo–V',
         'Mn– /4Mo–V': 'Mn–1/4Mo–V',
         '1Mn– /2Mo': 'Mn–1/2Mo',
         'Mn– /2Mo': 'Mn–1/2Mo',
+        'Mn –1/2Mo': 'Mn–1/2Mo',
         '1Mn– /2Mo– /4Ni1': 'Mn–1/2Mo–1/4Ni',
         'Mn– /2Mo– /4Ni': 'Mn–1/2Mo–1/4Ni',
         '1Mn– /2Mo– /2Ni1': 'Mn–1/2Mo–1/2Ni',
         'Mn– /2Mo– /2Ni': 'Mn–1/2Mo–1/2Ni',
+        'Mn –1 /2Mo –1/2Ni': 'Mn–1/2Mo–1/2Ni',
+        'Mn –1 /2Mo– /2Ni1': 'Mn–1/2Mo–1/2Ni',
+        'Mn–1 1/2Mo– /2Ni':  'Mn–1/2Mo–1/2Ni',
         '3Mn– /2Mo– /4Ni1': 'Mn–1/2Mo–3/4Ni',
+        'Mn–1/2Mo–3/4Ni': 'Mn–1/2Mo–3/4Ni',
+        'Mn –1 /2Mo –3/4Ni': 'Mn–1/2Mo–3/4Ni',
+        'Mn– /2Mo–3/4Ni': 'Mn–1/2Mo–3/4Ni',
         '1Mn– /2Ni–V': 'Mn–1/2Ni–V',
         'Mn– /2Ni–V': 'Mn–1/2Ni–V',
+        'Mn –1/2Ni–V': 'Mn–1/2Ni–V',
 
         '11 /2Si– /2Mo1': '1 1/2Si–1/2Mo',
         '1 /2Si– /2Mo': '1 1/2Si–1/2Mo',
 
         '1 1/2Ni– /2Cr– /4Mo–V1': '1/2Ni–1/2Cr–1/4Mo–V',
         '/2Ni– /2Cr– /4Mo–V':  '1/2Ni–1/2Cr–1/4Mo–V',
+        '1 /2Ni –1 /2Cr –1/4Mo–V': '1/2Ni–1/2Cr–1/4Mo–V',
+        '1 /2Ni –1 /2Cr– /4Mo–V1': '1/2Ni–1/2Cr–1/4Mo–V',
         '1 1/2Ni– /2Mo–V': '1/2Ni–1/2Mo–V',
-        '/2Ni– /2Mo–V':  '1/2Ni–1/2Mo–V',
+        '/2Ni– /2Mo–V': '1/2Ni–1/2Mo–V',
+        '1 /2Ni –1/2Mo–V': '1/2Ni–1/2Mo–V',
 
         '3 1/4Ni– /2Cr– /2Mo–V1': '3/4Ni–1/2Cr–1/2Mo–V',
         '/4Ni– /2Cr– /2Mo–V': '3/4Ni–1/2Cr–1/2Mo–V',
+        '3 /4Ni –1 /2Cr– /2Mo–V1': '3/4Ni–1/2Cr–1/2Mo–V',
+        '/4Ni–1 1/2Cr– /2Mo–V': '3/4Ni–1/2Cr–1/2Mo–V',
+
         '3 1/4Ni– /2Cu–Mo': '3/4Ni–1/2Cu–Mo',
+        '3 /4Ni –1/2Cu–Mo': '3/4Ni–1/2Cu–Mo',
         '/4Ni– /2Cu–Mo': '3/4Ni–1/2Cu–Mo',
         '3 1/4Ni– /2Mo– /3Cr–V1': '3/4Ni–1/2Mo–1/3Cr–V',
         '/4Ni– /2Mo– /3Cr–V': '3/4Ni–1/2Mo–1/3Cr–V',
+        '/4Ni–1/2Mo–1/3Cr–V': '3/4Ni–1/2Mo–1/3Cr–V',
         '3 1/4Ni– /2Mo–Cr–V': '3/4Ni–1/2Mo–Cr–V',
         '/4Ni– /2Mo–Cr–V': '3/4Ni–1/2Mo–Cr–V',
         '3 3/4Ni–1Mo– /4Cr': '3/4Ni–1Mo–3/4Cr',
@@ -117,6 +160,7 @@ def adjust_chemical_composition(data_frame=None):
         '/4Ni–1Cu– /4Cr': '3/4Ni–1Cu–3/4Cr',
 
         '11Ni– /2Cr– /2Mo1': '1Ni–1/2Cr–1/2Mo',
+        '1Ni –1 /2Cr– /2Mo1': '1Ni–1/2Cr–1/2Mo',
         '1Ni– /2Cr– /2Mo': '1Ni–1/2Cr–1/2Mo',
         '11 /4Ni–1Cr– /2Mo1': '1 1/4Ni–1Cr–1/2Mo',
         '1 /4Ni–1Cr– /2Mo': '1 1/4Ni–1Cr–1/2Mo',
@@ -132,30 +176,42 @@ def adjust_chemical_composition(data_frame=None):
         '2Ni– /4Cr– /3Mo': '2Ni–3/4Cr–1/3Mo',
         '12Ni–1 /2Cr– /4Mo–V1': '2Ni–1 1/2Cr–1/4Mo–V',
         '2Ni–1 /2Cr– /4Mo–V': '2Ni–1 1/2Cr–1/4Mo–V',
+        '2Ni 1 /2Cr– /4Mo–V– 1 1': '2Ni–1 1/2Cr–1/4Mo–V',
 
         '12 /2Ni': '2 1/2Ni',
         '2 /2Ni': '2 1/2Ni',
         '12 /4Ni–1 /2Cr– /2Mo3 1': '2 3/4Ni–1 1/2Cr–1/2Mo',
         '2 /4Ni–1 /2Cr– /2Mo': '2 3/4Ni–1 1/2Cr–1/2Mo',
+        '2 /4Ni–1 /2Cr–1/2Mo': '2 3/4Ni–1 1/2Cr–1/2Mo',
         '12 /4Ni–1 /2Cr– /2Mo–V3 1': '2 3/4Ni–1 1/2Cr–1/2Mo–V',
         '2 /4Ni–1 /2Cr– /2Mo–V': '2 3/4Ni–1 1/2Cr–1/2Mo–V',
+        '2 /4Ni–1 /2Cr–1/2Mo–V': '2 3/4Ni–1 1/2Cr–1/2Mo–V',
+        '2 /4Ni–11 /2Cr– /2Mo–V1': '2 3/4Ni–1 1/2Cr–1/2Mo–V',
 
         '13Ni–1 /4Cr– /2Mo3': '3Ni–1 3/4Cr–1/2Mo',
         '3Ni–1 /4Cr– /2Mo': '3Ni–1 3/4Cr–1/2Mo',
+        '3Ni 1 /4Cr– /2Mo– 3 1': '3Ni–1 3/4Cr–1/2Mo',
+        '3Ni–1 /4Cr–1/2Mo': '3Ni–1 3/4Cr–1/2Mo',
         '13 /2Ni': '3 1/2Ni',
         '3 /2Ni': '3 1/2Ni',
         '13 /2Ni–1 /4Cr– /2Mo–V1 3': '3 1/2Ni–1 3/4Cr–1/2Mo–V',
         '3 /2Ni–1 /4Cr– /2Mo–V': '3 1/2Ni–1 3/4Cr–1/2Mo–V',
+        '3 /2Ni 1 /4Cr– /2Mo–V1 – 3 1': '3 1/2Ni–1 3/4Cr–1/2Mo–V',
         '14Ni–1 /2Cr– /2Mo–V1': '4Ni–1 1/2Cr–1/2Mo–V',
         '4Ni–1 /2Cr– /2Mo–V': '4Ni–1 1/2Cr–1/2Mo–V',
+        '4Ni 1 /2Cr– /2Mo–V– 1 1': '4Ni–1 1/2Cr–1/2Mo–V',
+        '4Ni– 11 /2Cr– /2Mo–V1': '4Ni–1 1/2Cr–1/2Mo–V',
         '15Ni– /4Mo': '5Ni–1/4Mo',
         '5Ni– /4Mo': '5Ni–1/4Mo',
+        '5Ni–1/4Mo': '5Ni–1/4Mo',
 
         '12 /2Cr–2Ni': '12 1/2Cr–2Ni',
         '135Ni–19Cr–1 /4Si': '35Ni–19Cr–1 1/4Si',
         '35Ni–19Cr–1 /4Si': '35Ni–19Cr–1 1/4Si',
         '119Cr–9Ni– /2Mo': '19Cr–9Ni–1/2Mo',
         '19Cr–9Ni– /2Mo': '19Cr–9Ni–1/2Mo',
+        '19Cr 9Ni – –1/2Mo': '19Cr–9Ni–1/2Mo',
+        '19Cr–9Ni–1/2Mo': '19Cr–9Ni–1/2Mo',
     }
     """untranslated_list = [
         '...', '11Cr–Ti', '12Cr', '12Cr–9Ni–2Cu–1Ti', '12Cr–Al', '12Cr–Ti', '13Cr', '13Cr–4Ni', '13Cr–8Ni–2Mo', 
