@@ -23,7 +23,7 @@ class PdfTableExtractor(tk.Tk):
             self.style = Style(theme='darkly')
             self.path = os.getcwd()
             self.iconbitmap(os.path.join(self.path, 'DATA/petrobras.ico'))
-            self.title('PDF Table Data Extraction Tool - version 2022-R1')
+            self.title('PDF Table Extraction Tool - v. 2022-R1')
 
             window_width = 400
             window_height = 120
@@ -884,7 +884,7 @@ class PdfTableExtractor(tk.Tk):
             local_top = tk.Toplevel()
             local_top.minsize(600, 150)
             local_top.iconbitmap(os.path.join(self.path, 'DATA/petrobras.ico'))
-            local_top.title('ASME PDF Extract Tool')
+            local_top.title('PDF Table Extraction Tool - v. 2022-R1')
             for col in range(5):
                 local_top.columnconfigure(col, weight=1)
             local_top.configure(padx=10, pady=10)
