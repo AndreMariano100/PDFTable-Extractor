@@ -786,13 +786,13 @@ class PdfTableExtractor(tk.Tk):
                       'Applicability and Max. Temperature Limits VIII-2',
                       'Applicability and Max. Temperature Limits XII',
                       'Notes',),
-                '3': ('Line No.', '40', '100', '125', '150', '175', '200', '225', '250', '275', '300', '325', '350',
-                      '375', '400', '425', '450', '475'),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275', '300', '325',
+                      '350', '375', '400', '425', '450', '475'),
                 '4': ('Line No.', '500', '525', '550', '575', '600', '625', '650', '675', '700', '725', '750',
                       '775', '800', '825', '850', '875', '900')
             },
             'Table 4': {
-                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                '1': ('Line No.', 'Nominal Composition', 'Spec. No.', 'Type/Grade',
                       'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm'),
                 '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
                       'Applicability and Max. Temperature Limits III',
@@ -801,7 +801,7 @@ class PdfTableExtractor(tk.Tk):
                 '3': ('Line No.', '40', '100', '150', '200', '250', '300', '325', '350',
                       '375', '400', '425'),
             },
-            'Table 5': {
+            'Table 5A': {
                 '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
                       'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, mm', 'P-No.', 'Group No.'),
                 '2': ('Line No.', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa',
@@ -848,9 +848,10 @@ class PdfTableExtractor(tk.Tk):
             'Table Y-1': {
                 '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
                       'Alloy Desig./UNS No.', 'Class/Condition/Temper'),
-                '2': ('Size/Thickness, mm', 'Min. Tensile Strength, MPa', 'Min. Yield Strength, MPa', 'Notes'),
+                '2': ('Line No.', 'Size/Thickness, mm', 'Min. Tensile Strength, MPa',
+                      'Min. Yield Strength, MPa', 'Notes'),
                 '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275'),
-                '4': ('300', '325', '350', '375', '400', '425', '450', '475', '500', '525'),
+                '4': ('Line No.', '300', '325', '350', '375', '400', '425', '450', '475', '500', '525'),
                 '5': ('Line No.', '550', '575', '600', '625', '650', '675', '700', '725', '750',
                       '775', '800', '825', '850', '875', '900')
             },
@@ -994,7 +995,8 @@ class PdfTableExtractor(tk.Tk):
             y_pos = float(data['Top Border'])
             location = (0, y_pos, canvas_size[0], y_pos)
             location_2 = (int(canvas_size[0]/2), y_pos+5)
-            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['top border line', 'draggable'])
+            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['top border line', 'draggable'],
+                                        activefill='blue')
             self.pdf_canvas.create_text(*location_2, text=f'Top Border', anchor='nw',
                                         fill='red', tag='top border text')
 
@@ -1003,7 +1005,8 @@ class PdfTableExtractor(tk.Tk):
             y_pos = float(data['Bottom Border'])
             location = (0, y_pos, canvas_size[0], y_pos)
             location_2 = (int(canvas_size[0]/2), y_pos-5)
-            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['bottom border line', 'draggable'])
+            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['bottom border line', 'draggable'],
+                                        activefill='blue')
             self.pdf_canvas.create_text(*location_2, text=f'Bottom Border', anchor='sw',
                                         fill='red', tag='bottom border text')
 
@@ -1012,7 +1015,8 @@ class PdfTableExtractor(tk.Tk):
             x_pos = float(data['Left Border'])
             location = (x_pos, 0, x_pos, canvas_size[1])
             location_2 = (x_pos+5, 5)
-            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['left border line', 'draggable'])
+            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['left border line', 'draggable'],
+                                        activefill='blue')
             self.pdf_canvas.create_text(*location_2, text=f'Left Border', anchor='nw',
                                         fill='red', tag='left border text')
 
@@ -1021,9 +1025,10 @@ class PdfTableExtractor(tk.Tk):
             x_pos = float(data['Right Border'])
             location = (x_pos, 0, x_pos, canvas_size[1])
             location_2 = (x_pos-5, 5)
-            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['right border line', 'draggable'])
-            self.pdf_canvas.create_text(*location_2, text=f'Right Border', anchor='ne',
-                                        fill='red', tag='right border text')
+            self.pdf_canvas.create_line(*location, fill='red', width=2, tag=['right border line', 'draggable'],
+                                        activefill='blue')
+            self.pdf_canvas.create_text(*location_2, text=f'Right Border', anchor='ne', fill='red',
+                                        tag='right border text')
 
         # Draws the columns
         if True:
@@ -1033,8 +1038,7 @@ class PdfTableExtractor(tk.Tk):
             for k, v in internal_borders.items():
                 x_pos = float(v)
                 self.pdf_canvas.create_line(x_pos, 0, x_pos, canvas_size[1], fill='orange', width=2,
-                                            activefill='red',
-                                            tag=[f'column line {count}', 'draggable'])
+                                            activefill='blue', tag=[f'column line {count}', 'draggable'])
                 count += 1
 
     def check_draggable(self, event):
@@ -1185,7 +1189,7 @@ class PdfTableExtractor(tk.Tk):
     def extract_table(self):
         """ Method to extract the tables values """
 
-        if not self.pdf_file_images:
+        if not self.pdf_file_images or not self.header_dict:
             return
 
         # Reads the chemical composition data

@@ -1,0 +1,25 @@
+﻿Line No.
+Nominal Composition
+Product Form
+Spec. No.
+
+Type/Grade
+Alloy Desig./UNS No.
+Class/Condition/Temper
+Size/Thickness, mm
+
+P-No.
+Group No.
+
+Min. Tensile Strength, MPa
+Min. Yield Strength, MPa
+
+Applicability and Max. Temperature Limits I
+Applicability and Max. Temperature Limits III 
+Applicability and Max. Temperature Limits VIII-1 
+Applicability and Max. Temperature Limits VIII-2
+Applicability and Max. Temperature Limits XII 
+
+Maximum Use Temperature, °C 
+External Pressure Chart No. 
+Notes
