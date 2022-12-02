@@ -240,6 +240,7 @@ def adjust_chemical_composition(data_frame, chemical_composition_dict):
         '19Cr 9Ni – –1/2Mo': '19Cr–9Ni–1/2Mo',
         '19Cr–9Ni–1/2Mo': '19Cr–9Ni–1/2Mo',
     }
+    new_chemical_composition_list = []
 
     df = data_frame
     j = df.columns.get_loc('Nominal Composition')
@@ -273,20 +274,37 @@ def adjust_chemical_composition(data_frame, chemical_composition_dict):
         if identifier in chemical_composition_dict:
             chemical_composition = chemical_composition_dict[identifier]
 
-        elif '/' not in current_chemical_string:
+        elif current_chemical_string == '...':
+            chemical_composition = '...'
             chemical_composition_dict[identifier] = current_chemical_string
-            chemical_composition = current_chemical_string
 
-        else:
-            if current_chemical_string in master_translation_dict:
-                chemical_composition = master_translation_dict.get(current_chemical_string)
+        elif '/' not in current_chemical_string:
+            if current_chemical_string not in new_chemical_composition_list:
+                print(f'The following material does not exist in the current database')
+                print(f'{_spec} {_type} {_alloy} {_condition}: {current_chemical_string} (original composition)')
+                answer = input(f'May this material/chemical composition be added to the database? (y/n)')
+                if answer.upper() == 'Y':
+                    chemical_composition_dict[identifier] = current_chemical_string
+                    new_chemical_composition_list.append(current_chemical_string)
+                chemical_composition = current_chemical_string
+            else:
+                chemical_composition_dict[identifier] = current_chemical_string
+                chemical_composition = current_chemical_string
+
+        elif current_chemical_string in master_translation_dict:
+            chemical_composition = master_translation_dict.get(current_chemical_string)
+            print(f'The following material does not exist in the current database')
+            print(f'{_spec} {_type} {_alloy} {_condition}: {chemical_composition} (from translation dictionary)')
+            answer = input(f'May this material/chemical composition be added to the database? (y/n)')
+            if answer.upper() == 'Y':
                 chemical_composition_dict[identifier] = chemical_composition
 
-            else:
-                print(f'The following chemical composition does not exist in the current database')
-                print(f'{_spec} {_type} {_alloy} {_condition}')
-                print(f'What is the desired chemical composition string?', end=' ')
-                chemical_composition = input()
+        else:
+            print(f'The following material does not exist in the current database and translation dictionary')
+            print(f'{_spec} {_type} {_alloy} {_condition}: {current_chemical_string}')
+            chemical_composition = input(f'What is the desired chemical composition string?')
+            answer = input(f'May this material/chemical composition be added to the database? (y/n)')
+            if answer.upper() == 'Y':
                 chemical_composition_dict[identifier] = chemical_composition
 
         df.iloc[i, j] = chemical_composition
@@ -415,6 +433,6 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
     chemical_composition_data = parent.chemical_composition_data
     df, new_chemical_composition_data = adjust_chemical_composition(df, chemical_composition_data)
     chemical_composition_data.update(new_chemical_composition_data)
-    # print('Extraction finished')
+    print('Extraction finished')
 
     return df
