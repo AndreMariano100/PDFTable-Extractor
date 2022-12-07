@@ -332,6 +332,7 @@ def read_single_page(pdf_path, pdf_page, top, bottom, left, right, columns_posit
                           multiple_tables=False, area=[top, left, bottom, right], columns=columns_positions,
                           pandas_options={'header': None, "dtype": str, "keep_default_na": True,
                                           "skip_blank_lines": False})
+    # print(dfs)
     df = dfs[0]
     df = clear_table(df)
     df = df.dropna()
@@ -366,7 +367,6 @@ def read_table_group(pdf_path, page_start, page_finish, boundaries_dict, columns
         bottom = boundaries['Bottom Border']
         internal_borders = [v for k, v in boundaries.items() if 'Col.' in k and int(v) != 0]
         new_data = read_single_page(pdf_path, i, top, bottom, left, right, internal_borders, columns_names)
-        internal_borders.insert(0, left)
 
         # print(f'\tReading page {i}')
         # print(f'\tApplicable boundaries:{boundaries}')
@@ -399,15 +399,15 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
     returns: PANDAS dataframe
     """
 
-    # print(f'Read PDF Table method called')
-    # print(f'Input Data:')
-    # print(f'\tPDF file path: {pdf_path}')
-    # print(f'\tPDF page start: {page_start}')
-    # print(f'\tPDF page end: {page_end}')
-    # print(f'\tPDF pages per table: {pages_per_table}')
-    # print(f'\tPDF page to skip: {page_skip}')
-    # print(f'\tBoundaries values: {boundaries_dict}')
-    # print(f'\tColumns names: {columns_names}\n')
+    print(f'Read PDF Table method called')
+    print(f'Input Data:')
+    print(f'\tPDF file path: {pdf_path}')
+    print(f'\tPDF page start: {page_start}')
+    print(f'\tPDF page end: {page_end}')
+    print(f'\tPDF pages per table: {pages_per_table}')
+    print(f'\tPDF page to skip: {page_skip}')
+    print(f'\tBoundaries values: {boundaries_dict}')
+    print(f'\tColumns names: {columns_names}\n')
 
     df = pd.DataFrame()
     page_grouping = pages_per_table + page_skip
@@ -416,23 +416,38 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
     total = page_end - page_start + 1
     progress_bar = cw.ProgressBar(parent, message='Extracting selected pages ...', final_value=total)
     progress_bar.grab_set()
-    for current_page in range(page_start, page_end, page_grouping):
-        count += page_grouping
-        progress_bar.update_bar(count)
-        group_starting_page = current_page
-        group_finish_page = current_page + pages_per_table - 1
-        df_temp = read_table_group(pdf_path, group_starting_page, group_finish_page, boundaries_dict, columns_names)
-        if df.empty:
-            df = df_temp
-        else:
-            df = pd.concat([df, df_temp])
+    if page_start == page_end:
+        print(f'Extracting single page {page_start}')
+        boundaries = boundaries_dict['1']
+        columns_names_list = columns_names['1']
+        top = boundaries['Top Border']
+        left = boundaries['Left Border']
+        right = boundaries['Right Border']
+        bottom = boundaries['Bottom Border']
+        internal_borders = [v for k, v in boundaries.items() if 'Col.' in k and int(v) != 0]
+        df = read_single_page(pdf_path, page_start, top, bottom, left, right, internal_borders, columns_names_list)
+
+    else:
+        for current_page in range(page_start, page_end, page_grouping):
+            print(f'Extracting page group {page_start}-{page_end}')
+            count += page_grouping
+            progress_bar.update_bar(count)
+            group_starting_page = current_page
+            group_finish_page = current_page + pages_per_table - 1
+            df_temp = read_table_group(pdf_path, group_starting_page, group_finish_page, boundaries_dict, columns_names)
+            if df.empty:
+                df = df_temp
+            else:
+                df = pd.concat([df, df_temp])
     progress_bar.destroy()
     df = df.reset_index(drop=True)
 
     # Adjust the chemical composition for the material specifications
-    chemical_composition_data = parent.chemical_composition_data
-    df, new_chemical_composition_data = adjust_chemical_composition(df, chemical_composition_data)
-    chemical_composition_data.update(new_chemical_composition_data)
+    if 'Nominal Composition' in df.columns:
+        chemical_composition_data = parent.chemical_composition_data
+        df, new_chemical_composition_data = adjust_chemical_composition(df, chemical_composition_data)
+        chemical_composition_data.update(new_chemical_composition_data)
+
     print('Extraction finished')
 
     return df

@@ -359,7 +359,7 @@ class PdfTableExtractor(tk.Tk):
         window_width = 400 + image_width + 20
         window_height = 600
         self.minsize(window_width, window_height)
-        self.resizable(False, True)
+        self.resizable(True, True)
         self.geometry(self.screen_position(self))
         self.update()
 
@@ -855,6 +855,10 @@ class PdfTableExtractor(tk.Tk):
                 '5': ('Line No.', '550', '575', '600', '625', '650', '675', '700', '725', '750',
                       '775', '800', '825', '850', '875', '900')
             },
+            'Table TM-1': {
+                '1': ('Headers Materials', '-20', '-125', '-75', '25', '100', '150', '200', '250', '300',
+                      '350', '400', '450', '500', '550', '600', '650', '700')
+            }
         }
         search_list = list(columns_names_dict.keys())
         page = self.pdf_object.load_page(start_page)
@@ -1193,7 +1197,7 @@ class PdfTableExtractor(tk.Tk):
             return
 
         # Reads the chemical composition data
-        file_path = os.path.join(self.path, 'DATA/chemical_composition.json')
+        file_path = os.path.join(self.path, 'DATA/a_chemical_composition.json')
         try:
             with open(file_path, 'r') as file_object:
                 self.chemical_composition_data = json.load(file_object)
