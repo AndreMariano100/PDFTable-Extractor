@@ -429,7 +429,7 @@ def read_pdf_table(pdf_path, page_start, page_end, pages_per_table, page_skip, b
 
     else:
         for current_page in range(page_start, page_end, page_grouping):
-            print(f'Extracting page group {page_start}-{page_end}')
+            print(f'Extracting page group {current_page}-{current_page + pages_per_table - 1}')
             count += page_grouping
             progress_bar.update_bar(count)
             group_starting_page = current_page

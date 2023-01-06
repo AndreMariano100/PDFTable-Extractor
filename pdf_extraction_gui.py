@@ -6,6 +6,7 @@ import compoundwidgets as cw
 
 import fitz
 import os
+import csv
 import json
 from threading import Thread
 import pandas
@@ -13,7 +14,7 @@ from pdf_extraction_methods import read_pdf_table
 
 
 class PdfTableExtractor(tk.Tk):
-    """ Main application window"""
+    """ Main application window """
 
     def __init__(self):
 
@@ -225,11 +226,13 @@ class PdfTableExtractor(tk.Tk):
             self.buttons_frame.columnconfigure(1, weight=1)
             self.buttons_frame.grid_remove()
 
-            button = ttk.Button(self.buttons_frame, text='Set Columns Names', command=self.set_columns_names)
-            button.grid(row=0, column=0, sticky='nsew')
-            button = ttk.Button(self.buttons_frame, text='Extract Table', command=self.extract_table,
-                                style='success.TButton')
-            button.grid(row=0, column=1, sticky='nsew', padx=(2, 0))
+            self.column_names_button = ttk.Button(self.buttons_frame, text='Set Columns Names',
+                                                  command=self.set_columns_names)
+            self.column_names_button.grid(row=0, column=0, sticky='nsew')
+
+            self.extract_button = ttk.Button(self.buttons_frame, text='Extract Table', command=self.extract_table,
+                                             style='success.TButton', state='disabled')
+            self.extract_button.grid(row=0, column=1, sticky='nsew', padx=(2, 0))
 
         # Right frame - canvas to show the pdf pages
         if True:
@@ -310,12 +313,7 @@ class PdfTableExtractor(tk.Tk):
         self.pdf_page_widget.configure(state='enable', from_=1, to=total)
         self.pdf_page_var.set(1)
         self.pdf_page_selected()
-        if len(self.pdf_file_name) > 20:
-            text = f'({total} pages)'
-        else:
-            text = f'File Name: "{os.path.split(self.pdf_file_name)[1]}" ({total} pages)'
-
-        self.pdf_page_label.config(text=text)
+        self.pdf_page_label.config(text=f'({total} pages)')
 
         # Adjust the page range selection widgets
         self.page_range_select_frame.grid()
@@ -326,6 +324,7 @@ class PdfTableExtractor(tk.Tk):
         # Adjust the table data widgets
         self.table_data_frame.grid()
         self.pages_per_table.set(1)
+        self.pages_to_skip.set(0)
         self.pages_per_table_selected()
 
         # Adjust the border configuration widgets
@@ -352,6 +351,7 @@ class PdfTableExtractor(tk.Tk):
 
         # Adjust the buttons frame
         self.buttons_frame.grid()
+        self.extract_button.config(state='disabled')
 
         # Adjust the canvas size
         self.pdf_canvas.configure(width=image_width, height=image_width)
@@ -490,14 +490,28 @@ class PdfTableExtractor(tk.Tk):
             self.pages_per_table_label.configure(text=f'(Total number of tables: {number_of_tables})')
             self.number_of_models = pages_per_data
 
+        # Gets the current image size
+        image = self.pdf_file_images[0]
+        image_width = image.width()
+        image_height = image.height()
+
         # Adjust the number of entries in the border dictionary
         for i in range(self.number_of_models):
             if str(i+1) not in self.border_values_dict:
                 self.border_values_dict[str(i+1)] = {}
+
                 for widget in self.borders_widgets:
                     value = widget.get()
-                    value = int(value) if value else 0
-                    self.border_values_dict[str(i+1)][widget.label.cget('text').replace(':', '')] = value
+                    label = widget.label.cget('text').replace(':', '')
+
+                    if label == 'Right Border':
+                        value = int(value) if value else image_width
+                    elif label == 'Bottom Border':
+                        value = int(value) if value else image_height
+                    else:
+                        value = int(value) if value else 0
+
+                    self.border_values_dict[str(i+1)][label] = value
 
         # Removes items that no longer exist in the border dictionary
         all_borders_list = [k for k in self.border_values_dict.keys() if int(k) <= self.number_of_models]
@@ -594,6 +608,9 @@ class PdfTableExtractor(tk.Tk):
         """ Fills the current border values stored at the self.border_values_dict """
 
         current_border = self.border_name.cget('text')
+        image = self.pdf_file_images[0]
+        image_width = image.width()
+        image_height = image.height()
 
         if current_border == 'SKIP':
             self.clear_borders()
@@ -605,8 +622,18 @@ class PdfTableExtractor(tk.Tk):
             # If there is no dictionary, creates it
             if current_border not in self.border_values_dict:
                 self.border_values_dict[current_border] = {}
+
                 for widget in self.borders_widgets:
-                    self.border_values_dict[current_border][widget.label.cget('text').replace(':', '')] = 0
+                    label = widget.label.cget('text').replace(':', '')
+                    value = widget.get()
+
+                    if label == 'Right Border':
+                        value = int(value) if value else image_width
+                    elif label == 'Bottom Border':
+                        value = int(value) if value else image_height
+                    else:
+                        value = int(value) if value else 0
+                    self.border_values_dict[current_border][label] = value
                 self.border_values_dict[current_border]['Number of Columns'] = 1
 
             # Shows / Hides the column related widgets
@@ -860,14 +887,137 @@ class PdfTableExtractor(tk.Tk):
                       '350', '400', '450', '500', '550', '600', '650', '700')
             }
         }
+        columns_names_dict_2 = {
+            'Table 1A': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, in', 'P-No.', 'Group No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, ksi', 'Min. Yield Strength, ksi',
+                      'Applicability and Max. Temperature Limits I', 'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-1',
+                      'Applicability and Max. Temperature Limits XII', 'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '100', '150', '200', '250', '300', '400', '500', '600', '650', '700', '750',
+                      '800', '850', '900'),
+                '4': ('Line No.', '950', '1000', '1050', '1100', '1150', '1200', '1250', '1300', '1400', '1450', '1500',
+                      '1550', '1600', '1650')
+            },
+            'Table 1B': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper'),
+                '2': ('Line No.', 'Size/Thickness, in', 'P-No.', 'Min. Tensile Strength, ksi',
+                      'Min. Yield Strength, ksi',
+                      'Applicability and Max. Temperature Limits I', 'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-1',
+                      'Applicability and Max. Temperature Limits XII', 'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '100', '150', '200', '250', '300', '350', '400', '450', '500', '550', '600', '650',
+                      '700', '750', '800', '850', '900', '950'),
+                '4': ('Line No.', '1000', '1050', '1100', '1150', '1200', '1250', '1300', '1350', '1400', '1450',
+                      '1500', '1550', '1600', '1650', '1700', '1750', '1800')
+            },
+            'Table 2A': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, in', 'P-No.', 'Group No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, ksi', 'Min. Yield Strength, ksi',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '100', '150', '200', '250', '300', '350', '400', '450', '500', '550',
+                      '600', '650', '700', '750', '800', '850'),
+            },
+            'Table 2B': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, in', 'P-No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, ksi', 'Min. Yield Strength, ksi',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'External Pressure Chart No.', 'Notes',),
+                '3': ('Line No.', '40', '65', '100', '125', '150', '175', '200', '225', '250', '275', '300',
+                      '325', '350', '375', '400', '425'),
+            },
+            'Table 3': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, in'),
+                '2': ('Line No.', 'Min. Tensile Strength, ksi', 'Min. Yield Strength, ksi',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-1',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'Applicability and Max. Temperature Limits XII',
+                      'Notes',),
+                '3': ('Line No.', '100', '150', '200', '250', '300', '350', '400', '450', '500', '550', '600',
+                      '650', '700', '750', '800', '850', '900'),
+                '4': ('Line No.', '950', '1000', '1050', '1100', '1150', '1200', '1250', '1300', '1350', '1400',
+                      '1450', '1500', '1550', '1600', '1650')
+            },
+            'Table 4': {
+                '1': ('Line No.', 'Nominal Composition', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, in'),
+                '2': ('Line No.', 'Min. Tensile Strength, ksi', 'Min. Yield Strength, ksi',
+                      'Applicability and Max. Temperature Limits III',
+                      'Applicability and Max. Temperature Limits VIII-2',
+                      'Notes',),
+                '3': ('Line No.', '100', '200', '300', '400', '500', '600', '650', '700', '750', '800'),
+            },
+            'Table 5A': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper', 'Size/Thickness, in', 'P-No.', 'Group No.'),
+                '2': ('Line No.', 'Min. Tensile Strength, ksi', 'Min. Yield Strength, ksi',
+                      'Maximum Use Temperature, °C', 'External Pressure Chart No.', 'Notes'),
+                '3': ('Line No.', '100', '150', '200', '250', '300', '350', '400', '450', '500', '550', '600',
+                      '650', '700', '750', '800', '850', '900'),
+                '4': ('Line No.', '950', '1000', '1050', '1100', '1150', '1200', '1250', '1300', '1350', '1400',
+                      '1450', '1500')
+            },
+            'Table 5B': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper'),
+                '2': ('Line No.', 'Size/Thickness, in', 'P-No.', 'Min. Tensile Strength, ksi',
+                      'Min. Yield Strength, ksi',
+                      'Maximum Use Temperature, °C', 'External Pressure Chart No.', 'Notes'),
+                '3': ('Line No.', '100', '150', '200', '250', '300', '350', '400', '450', '500',
+                      '550', '600', '650', '700', '750', '800', '850', '900'),
+                '4': ('Line No.', '950', '1000', '1050', '1100', '1150', '1200', '1250', '1300', '1350', '1400', '1450',
+                      '1500', '1550', '1600', '1650')
+            },
+            'Table U': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper',
+                      'Size/Thickness, in', 'Min. Tensile Strength, ksi'),
+                '2': ('Line No.', '100', '200', '300', '400', '500', '600', '650', '700', '750', '800',
+                      '850', '900', '950', '1000'),
+                '3': ('Line No.', '1050', '1100', '1150', '1200', '1250', '1300', '1350', '1400', '1450', '1500',
+                      '1550', '1600', '1650')
+            },
+            'Table Y-1': {
+                '1': ('Line No.', 'Nominal Composition', 'Product Form', 'Spec. No.', 'Type/Grade',
+                      'Alloy Desig./UNS No.', 'Class/Condition/Temper'),
+                '2': ('Line No.', 'Size/Thickness, in', 'Min. Tensile Strength, ksi',
+                      'Min. Yield Strength, ksi', 'Notes'),
+                '3': ('Line No.', '100', '150', '200', '250', '300', '350', '400', '450', '500'),
+                '4': ('Line No.', '550', '600', '650', '700', '750', '800', '850', '900', '950', '1000'),
+                '5': ('Line No.', '1050', '1100', '1150', '1200', '1250', '1300', '1350', '1400', '1450', '1500',
+                      '1550', '1600', '1650')
+            },
+            'Table TM-1': {
+                '1': ('Headers Materials', '-20', '-125', '-75', '25', '100', '150', '200', '250', '300',
+                      '350', '400', '450', '500', '550', '600', '650', '700')
+            }
+        }
+
         search_list = list(columns_names_dict.keys())
         page = self.pdf_object.load_page(start_page)
         page_text = page.get_text()
+        page_2 = self.pdf_object.load_page(start_page+1)
+        page_text_2 = page_2.get_text()
+
         selected_table = ''
         for item in search_list:
             if item in page_text:
                 selected_table = item
                 break
+
+        if 'ksi' in page_text or 'ksi' in page_text_2:
+            names_dict = columns_names_dict_2
+        else:
+            names_dict = columns_names_dict
 
         for i, value in enumerate(self.border_labels_list):
 
@@ -917,7 +1067,7 @@ class PdfTableExtractor(tk.Tk):
                 var = tk.StringVar(value=value)
                 if selected_table:
                     try:
-                        value = columns_names_dict[selected_table][str(i+1)][j]
+                        value = names_dict[selected_table][str(i+1)][j]
                         var.set(value)
                     except KeyError:
                         pass
@@ -944,6 +1094,8 @@ class PdfTableExtractor(tk.Tk):
             local_list = [var.get() for var in all_columns_vars]
 
             self.header_dict[str(i + 1)] = local_list
+
+        self.extract_button.config(state='normal')
 
     def fill_previous_border_value(self, event):
         """ Fills the current border with the value from the previous type """
@@ -975,21 +1127,32 @@ class PdfTableExtractor(tk.Tk):
     def draw_borders(self, event=None):
         """ Draws the borders on the image """
 
-        if not self.number_of_models or not self.pdf_file_images:
+        if not self.pdf_file_images:
             return
 
         current_model = self.border_name.cget('text')
+
+        # Pages without borders
         if current_model == 'SKIP':
             position = (int(self.pdf_canvas.winfo_width() / 2), int(self.pdf_canvas.winfo_height() / 2))
             self.pdf_canvas.create_text(*position, text=f'SKIP', anchor='center',
                                         fill='red', tag='top border text', font=('OpenSans', '30'))
             return
 
+        # Gets the border model number ('1', '2', and so on)
         current_model = current_model.split()[1]
         if current_model not in self.border_values_dict:
-            return
+            image = self.pdf_file_images[0]
+            image_width = image.width()
+            image_height = image.height()
+            data = {'Top Border': 0,
+                    'Bottom Border': image_height,
+                    'Left Border': 0,
+                    'Right Border': image_width}
 
-        data = self.border_values_dict[current_model]
+        else:
+            data = self.border_values_dict[current_model]
+
         canvas_size = (self.pdf_canvas.winfo_width(), self.pdf_canvas.winfo_height())
 
         self.clear_borders()
@@ -1227,7 +1390,15 @@ class PdfTableExtractor(tk.Tk):
                                                self.border_values_dict, self.header_dict, self)
 
     def save_csv_table(self):
-        """ Saves the extracted data to a csv file """
+        """ Saves the extracted data to a csv file and to .json file """
+
+        def isfloat(number):
+            """ Fast check whether a value is a float """
+            try:
+                float(number)
+                return True
+            except ValueError:
+                return False
 
         desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
         filename = asksaveasfilename(initialdir=desktop, title="Select file name",
@@ -1239,6 +1410,28 @@ class PdfTableExtractor(tk.Tk):
             filename = filename + '.csv'
 
         self.extracted_tables.to_csv(filename, sep=';', encoding='utf-8-sig')
+
+        with open(filename, encoding="utf-8-sig") as file_object:
+            my_data = []
+            csv_dict = csv.DictReader(file_object, delimiter=";")
+            for data in csv_dict:
+                my_data.append(data)
+
+        count = 0
+        total = len(my_data)
+        for data in my_data:
+            count += 1
+            for k, v in data.items():
+                k = k.replace('\u2013', '-')
+                v = v.replace('\u2013', '-')
+                if isfloat(k) and isfloat(v):
+                    data[k] = float(v)
+                else:
+                    data[k] = v
+        # write the json file
+        new_file_name = str(filename).replace('.csv', '.json')
+        with open(new_file_name, "w") as file_object:
+            json.dump(my_data, file_object)
 
     # Root methods -----------------------------------------------------------------------------------------------------
     @staticmethod
